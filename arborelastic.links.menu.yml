@@ -1,0 +1,5 @@
+arborelastic.admin_form:
+  title: 'Arborelastic module settings'
+  description: 'Configuration for the Arborelastic module'
+  route_name: arborelastic.admin_form
+  parent: 'system.admin_config_system'

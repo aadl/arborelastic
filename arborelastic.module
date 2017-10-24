@@ -1,0 +1,54 @@
+<?php
+
+use Elasticsearch\ClientBuilder;
+
+/**
+ * Display help and module information
+ * @return help text for section
+ */
+function arborelastic_help($path, $arg) {
+  $output = '';
+
+  switch ($path) {
+    case "admin/help#arborelastic":
+      $output = '<p>' .  t("Custom search with Elasticsearch") . '</p>';
+      break;
+  }
+
+  return $output;
+}
+
+function arborelastic_search($path_id, $query, $args = []) {
+  $indexes = \Drupal::config('arborelastic.settings')->get('arborelastic_indexes');
+  $indexes = explode("\n", $indexes);
+  foreach ($indexes as $i => $index) {
+    $parts = explode(':', $index);
+    $indexes[$parts[0]] = array('index' => $parts[1], 'type' => $parts[2]);
+    unset($indexes[$i]);
+  }
+
+  $hosts = [
+    [
+      'host' => \Drupal::config('arborelastic.settings')->get('arborelastic_host'),
+      'port' => \Drupal::config('arborelastic.settings')->get('arborelastic_port'),
+      'user' => \Drupal::config('arborelastic.settings')->get('arborelastic_user'),
+      'pass' => \Drupal::config('arborelastic.settings')->get('arborelastic_pass'),
+    ]
+  ];
+
+  $es_client = ClientBuilder::create()->setHosts($hosts)->build();
+
+  $params = [
+      'index' => $indexes[$path_id]['index'],
+      'type' => $indexes[$path_id]['type'],
+      'body' => [
+          'query' => [
+              'match' => [
+                  '_all' => $query,
+              ]
+          ]
+      ]
+  ];
+
+  return $es_client->search($params);
+}

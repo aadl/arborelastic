@@ -1,0 +1,14 @@
+arborelastic.admin_form:
+  path: /admin/config/arborelastic
+  defaults:
+    _title: 'Arborelastic module settings'
+    _form: '\Drupal\arborelastic\Form\ArborelasticAdminForm'
+  requirements:
+    _permission: 'access administration pages'
+arborelastic.home:
+  path: /arborelastic/{path_id}/{query}
+  defaults:
+    _title: 'AADL Search'
+    _controller: '\Drupal\arborelastic\Controller\DefaultController::index'
+  requirements:
+    _permission: 'access arborelastic'
