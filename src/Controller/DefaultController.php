@@ -17,7 +17,12 @@ class DefaultController extends ControllerBase {
 
     $response = arborelastic_search($path_id, $query);
 
-    $output .= '<pre>' . print_r($response, 1) . '</pre>';
+    $output .= '<p>Search returned ' . $response['hits']['total'] . ' total hits</p>';
+
+    foreach ($response['hits']['hits'] as $hit) {
+      // Theme according to $hit['_type']
+      $output .= '<pre>' . print_r($hit, 1) . '</pre>';
+    }
 
     return array(
       '#title' => 'Search',
