@@ -62,7 +62,14 @@ function arborelastic_search($path_id, $query, $args = []) {
       'from' => $_GET['page'] * $size,
       'body' => [
         'size' => $size,
-        'query' => $es_query
+        'query' => $es_query,
+        'aggs' => [
+          'mat_code' => [
+            'terms' => [
+              'field' => 'mat_code.keyword'
+            ]
+          ]
+        ]
       ]
   ];
 
