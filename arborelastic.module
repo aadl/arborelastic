@@ -20,12 +20,7 @@ function arborelastic_help($path, $arg) {
 
 function arborelastic_search($path_id, $query, $args = []) {
   $indexes = \Drupal::config('arborelastic.settings')->get('arborelastic_indexes');
-  $indexes = explode("\n", $indexes);
-  foreach ($indexes as $i => $index) {
-    $parts = explode(':', $index);
-    $indexes[$parts[0]] = array('index' => $parts[1], 'type' => $parts[2]);
-    unset($indexes[$i]);
-  }
+  $indexes = json_decode($indexes, TRUE);
 
   $hosts = [
     [
@@ -46,6 +41,7 @@ function arborelastic_search($path_id, $query, $args = []) {
     ]
   ];
 
+  // Process arguments
   $size = 10;
   foreach ($args as $field => $value) {
     if ($field == 'size') {
@@ -56,20 +52,20 @@ function arborelastic_search($path_id, $query, $args = []) {
     }
   }
 
+  // Set up facets as aggregates
+  $aggs = [];
+  foreach ($indexes[$path_id]['facets'] as $facet) {
+    $aggs[$facet] = ['terms' => ['field' => $facet . '.keyword']];
+  }
+
   $params = [
-      'index' => $indexes[$path_id]['index'],
+      'index' => $indexes[$path_id]['es_index'],
       'type' => $indexes[$path_id]['type'],
       'from' => $_GET['page'] * $size,
       'body' => [
         'size' => $size,
         'query' => $es_query,
-        'aggs' => [
-          'mat_code' => [
-            'terms' => [
-              'field' => 'mat_code.keyword'
-            ]
-          ]
-        ]
+        'aggs' => $aggs,
       ]
   ];
 

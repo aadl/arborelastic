@@ -83,7 +83,7 @@ class ArborelasticAdminForm extends ConfigFormBase {
       '#type' => 'textarea',
       '#title' => t('Elasticsearch Indexes'),
       '#default_value' => \Drupal::config('arborelastic.settings')->get('arborelastic_indexes'),
-      '#description' => t('Indexes to present on the search page. Each index on own line. Format is path_id:index:type'),
+      '#description' => t('Indexes to present on the search page. JSON-encoded array with index data'),
     ];
     return parent::buildForm($form, $form_state);
   }
