@@ -6,7 +6,7 @@ use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Session\AccountInterface;
 
 /**
- * Provides a Patron Checkouts Block.
+ * Provides a Search Facets Block.
  *
  * @Block(
  *   id = "catalog_facets_block",
