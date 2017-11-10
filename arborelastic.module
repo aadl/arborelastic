@@ -46,10 +46,12 @@ function arborelastic_search($path_id, $query, $args = []) {
     ]
   ];
 
-  $size = 10;
+  $size = 25;
   foreach ($args as $field => $value) {
     if ($field == 'size') {
       $size = $value;
+    } elseif ($field == 'page') {
+      $from = (isset($_GET['page']) ? $_GET['page'] * $size : 0);
     } else {
       $values = explode(',', $value);
       $es_query['bool']['must'][] = ['terms' => [$field => $values]];
@@ -59,7 +61,7 @@ function arborelastic_search($path_id, $query, $args = []) {
   $params = [
       'index' => $indexes[$path_id]['index'],
       'type' => $indexes[$path_id]['type'],
-      'from' => $_GET['page'] * $size,
+      'from' => $from,
       'body' => [
         'size' => $size,
         'query' => $es_query,
@@ -78,9 +80,11 @@ function arborelastic_search($path_id, $query, $args = []) {
 
 function arborelastic_theme($existing, $type, $theme, $path) {
   return [
-    'catalog_results' => [
+    'search_results' => [
       'variables' => [
-        'results' => NULL
+        'api_key' => NULL,
+        'results' => NULL,
+        'facets' => NULL
       ]
     ]
   ];

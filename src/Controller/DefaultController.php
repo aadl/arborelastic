@@ -13,12 +13,24 @@ use Drupal\Core\Controller\ControllerBase;
 class DefaultController extends ControllerBase {
 
   public function index($path_id, $query) {
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    if ($user) {
+      $api_key = $user->get('field_api_key')->value;
+    } else {
+      $api_key = false;
+    }
+
     $response = arborelastic_search($path_id, $query, $_GET);
+
+    $block_manager = \Drupal::service('plugin.manager.block');
+    $facets = $block_manager->createInstance('catalog_facets_block')->build();
 
     return [
       '#title' => 'Search',
-      '#theme' => 'catalog_results',
-      '#results' => $response
+      '#theme' => 'search_results',
+      '#api_key' => $api_key,
+      '#results' => $response,
+      '#facets' => $facets
     ];
   }
 
