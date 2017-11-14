@@ -18,9 +18,11 @@ class CatalogFacets extends BlockBase {
   public function build() {
     include(\Drupal::root() . '/modules/custom/arborelastic/src/config/facets.php');
 
-    $output = '<button class="button facets-apply">Apply</button>';
-    $output .= '<button class="button facets-reset">Reset</button>';
-    $output .= '<form method="get">';
+    $output = '<form method="get">';
+    $output .= '<span class="no-tabdesk-display">Filter (110 items)</span>';
+    $output .= '<span class="no-tabdesk-display" id="close-search-facets">X</span>';
+    $output .= '<div><button class="button facets-apply">Apply</button>';
+    $output .= '<button class="button facets-reset">Reset</button></div>';
     foreach ($facets['catalog'] as $k => $facet) {
       $name = $facet['name'];
       $output .= '<br><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span><span class="facets-section">' . $k;
@@ -51,13 +53,13 @@ class CatalogFacets extends BlockBase {
       }
       $output .= '</span>';
     }
-    $output .= '</form>';
     $output .= '<button type="submit" class="button facets-apply">Apply</button>';
     $output .= '<button class="button facets-reset">Reset</button>';
+    $output .= '</form>';
 
     return [
       '#markup' => $output,
-      '#allowed_tags' => ['form', 'span', 'input', 'label', 'br', 'button']
+      '#allowed_tags' => ['form', 'span', 'div', 'input', 'label', 'br', 'button']
     ];
   }
 
