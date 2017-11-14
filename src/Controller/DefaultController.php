@@ -25,12 +25,20 @@ class DefaultController extends ControllerBase {
     $block_manager = \Drupal::service('plugin.manager.block');
     $facets = $block_manager->createInstance('catalog_facets_block')->build();
 
+    // build the pager
+    $page = pager_find_page();
+    $size = (isset($_GET['size']) ? $_GET['size'] : 25);
+    $pager = pager_default_initialize($response['hits']['total'], $size);
+
     return [
-      '#title' => 'Search',
-      '#theme' => 'search_results',
-      '#api_key' => $api_key,
-      '#results' => $response,
-      '#facets' => $facets
+      [
+        '#title' => 'Search',
+        '#theme' => 'search_results',
+        '#api_key' => $api_key,
+        '#results' => $response,
+        '#facets' => $facets
+      ],
+      ['#type' => 'pager']
     ];
   }
 
