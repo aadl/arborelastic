@@ -38,7 +38,10 @@ class DefaultController extends ControllerBase {
         '#results' => $response,
         '#facets' => $facets
       ],
-      ['#type' => 'pager']
+      [
+        '#type' => 'pager',
+        '#quantity' => 3
+      ]
     ];
   }
 
