@@ -25,12 +25,12 @@ class CatalogFacets extends BlockBase {
     $output .= '<button class="button facets-reset">Reset</button></div>';
     foreach ($facets['catalog'] as $k => $facet) {
       $name = $facet['name'];
-      $output .= '<br><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span><span class="facets-section">' . $k;
+      $output .= '<br><div class="facets-toggle"><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span>' . $k . '</div><span class="facets-section">';
       if (isset($facet['has_subsections'])) {
         foreach ($facet as $i => $section) {
           if (isset($section['subsection'])) {
             if ($i != 'name') {
-              $output .= '<br><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span><span class="facets-section">' . $i;
+              $output .= '<div class="facets-toggle"><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span>' . $i . '</div><span class="facets-section">';
               foreach ($section as $v => $sel) {
                 $checked = (in_array($v, explode(',', $_GET[$name])) ? ' checked' : '');
                 if ($v != 'subsection') {
