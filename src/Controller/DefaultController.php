@@ -22,6 +22,14 @@ class DefaultController extends ControllerBase {
 
     $response = arborelastic_search($path_id, $query, $_GET);
 
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+
+    // Get material types from API
+    $guzzle = \Drupal::httpClient();
+    $mat_types = $guzzle->get("http://$api_url/mat-names")->getBody()->getContents();
+    $mat_names = json_decode($mat_types);
+    $response['mat_names'] = $mat_names;
+
     $block_manager = \Drupal::service('plugin.manager.block');
     $facets = $block_manager->createInstance('catalog_facets_block')->build();
 
