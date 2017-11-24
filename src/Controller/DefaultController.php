@@ -16,11 +16,7 @@ class DefaultController extends ControllerBase {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($user) {
       $api_key = $user->get('field_api_key')->value;
-      // grab lists from DB
-      $connection = \Drupal::database();
-      $sql = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid", 
-        [':uid' => $user->get('uid')->value]);
-      $lists = $sql->fetchAll();
+      $lists = arborcat_lists_get_lists($user->get('uid')->value);
     } else {
       $api_key = false;
       $lists = false;
