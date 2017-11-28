@@ -16,8 +16,10 @@ class DefaultController extends ControllerBase {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($user) {
       $api_key = $user->get('field_api_key')->value;
+      $lists = arborcat_lists_get_lists($user->get('uid')->value);
     } else {
       $api_key = false;
+      $lists = false;
     }
 
     $response = arborelastic_search($path_id, $query, $_GET);
@@ -43,6 +45,7 @@ class DefaultController extends ControllerBase {
         '#title' => 'Search',
         '#theme' => 'search_results',
         '#api_key' => $api_key,
+        '#lists' => $lists,
         '#results' => $response,
         '#facets' => $facets
       ],

@@ -16,7 +16,7 @@ use Drupal\Core\Session\AccountInterface;
 class CatalogFacets extends BlockBase {
 
   public function build() {
-    include(\Drupal::root() . '/modules/custom/arborelastic/src/config/facets.php');
+    include(\Drupal::root() . '/' . drupal_get_path('module', 'arborelastic') . '/src/config/facets.php');
 
     $output = '<form method="get">';
     $output .= '<span class="no-tabdesk-display">Filter (110 items)</span>';
@@ -32,7 +32,10 @@ class CatalogFacets extends BlockBase {
             if ($i != 'name') {
               $output .= '<div class="facets-toggle"><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span>' . $i . '</div><span class="facets-section">';
               foreach ($section as $v => $sel) {
-                $checked = (in_array($v, explode(',', $_GET[$name])) ? ' checked' : '');
+                $checked = '';
+                if (isset($_GET[$name])) {
+                  $checked = (in_array($v, explode(',', $_GET[$name])) ? ' checked' : '');
+                }
                 if ($v != 'subsection') {
                   $output .= "<span class=\"facet-selection\"><input type=\"checkbox\" name=\"$name\" value=\"$v\" id=\"facet-$v\" class=\"facet-checkbox\" $checked>";
                   $output .= "<label for=\"facet-$v\">$sel</label></span>";
@@ -45,7 +48,10 @@ class CatalogFacets extends BlockBase {
       } else {
         foreach ($facet as $i => $sel) {
           if ($i != 'name') {
-            $checked = (in_array($i, explode(',', $_GET[$name])) ? ' checked' : '');
+            $checked = '';
+            if (isset($_GET[$name])) {
+              $checked = (in_array($i, explode(',', $_GET[$name])) ? ' checked' : '');
+            }
             $output .= "<span class=\"facet-selection\"><input type=\"checkbox\" name=\"$name\" value=\"$i\" id=\"facet-$i\" class=\"facet-checkbox\" $checked>";
             $output .= "<label for=\"facet-$i\">$sel</label></span>";
           }
