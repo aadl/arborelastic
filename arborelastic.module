@@ -54,8 +54,10 @@ function arborelastic_search($path_id, $query, $args = []) {
     } elseif ($field == 'page') {
       $from = $_GET['page'];
     } else {
-      $values = explode(',', $value);
-      $es_query['bool']['must'][] = ['terms' => [$field => $values]];
+      if ($field != 'gridview') {
+        $values = explode(',', $value);
+        $es_query['bool']['must'][] = ['terms' => [$field => $values]];
+      }
     }
   }
 
@@ -85,7 +87,8 @@ function arborelastic_theme($existing, $type, $theme, $path) {
         'api_key' => NULL,
         'lists' => NULL,
         'results' => NULL,
-        'facets' => NULL
+        'facets' => NULL,
+        'gridview' => NULL
       ]
     ]
   ];

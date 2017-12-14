@@ -23,6 +23,7 @@ class DefaultController extends ControllerBase {
     }
 
     $response = arborelastic_search($path_id, $query, $_GET);
+    $gridview = (isset($_GET['gridview']) && $_GET['gridview'] == 'true' ? true : false);
 
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
@@ -47,7 +48,8 @@ class DefaultController extends ControllerBase {
         '#api_key' => $api_key,
         '#lists' => $lists,
         '#results' => $response,
-        '#facets' => $facets
+        '#facets' => $facets,
+        '#gridview' => $gridview
       ],
       [
         '#type' => 'pager',
