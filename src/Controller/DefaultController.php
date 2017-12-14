@@ -29,7 +29,7 @@ class DefaultController extends ControllerBase {
 
     // Get material types from API
     $guzzle = \Drupal::httpClient();
-    $mat_types = $guzzle->get("http://$api_url/mat-names")->getBody()->getContents();
+    $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
     $mat_names = json_decode($mat_types);
     $response['mat_names'] = $mat_names;
 
