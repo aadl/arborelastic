@@ -49,6 +49,15 @@ function arborelastic_search($path_id, $query, $args = []) {
     elseif ($field == 'page') {
       $from = $value;
     }
+    elseif ($field == 'sort') {
+      $sort_parts = explode('~', $value);
+      $sort_field = $sort_parts[0] . '.keyword';
+      $sort = [
+        $sort_field => [
+          'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc') // Default sort decending
+        ]
+      ];
+    }
     else {
       if ($field != 'gridview') {
         $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
@@ -80,7 +89,21 @@ function arborelastic_search($path_id, $query, $args = []) {
     ]
   ];
 
-  return $es_client->search($params);
+  if (isset($sort)) {
+    $params['body']['sort'] = $sort;
+  }
+
+  try {
+    $result = $es_client->search($params);
+  }
+  catch (\Exception $e) {
+    $result = [
+      'error' => 'Elasticsearch Query Failed',
+      'message' => $e->getMessage(),
+    ];
+  }
+
+  return $result;
 }
 
 function arborelastic_theme($existing, $type, $theme, $path) {
