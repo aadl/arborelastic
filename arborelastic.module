@@ -38,43 +38,46 @@ function arborelastic_search($path_id, $query, $args = []) {
 
   $es_client = ClientBuilder::create()->setHosts($hosts)->build();
 
-  $es_query = [
-    'bool' => [
-      'must' => [
-        ['match' => ['_all' => $query] ],
-      ],
-    ]
-  ];
-
-  $size = 25;
+  $size = 25; // default number of results to return
   $from = 0;
+
+  // Parse Args and add to query string
   foreach ($args as $field => $value) {
     if ($field == 'size') {
       $size = $value;
-    } elseif ($field == 'page') {
-      $from = $_GET['page'];
-    } else {
+    }
+    elseif ($field == 'page') {
+      $from = $value;
+    }
+    else {
       if ($field != 'gridview') {
-        $values = explode(',', $value);
-        $es_query['bool']['must'][] = ['terms' => [$field => $values]];
+        $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
       }
     }
   }
 
+  $es_query = [
+    'query_string' => [
+      'query' => $query,
+      'fields' => ['_all']
+    ]
+  ];
+
+
   $params = [
-      'index' => $indexes[$path_id]['index'],
-      'from' => $from,
-      'body' => [
-        'size' => $size,
-        'query' => $es_query,
-        'aggs' => [
-          'mat_code' => [
-            'terms' => [
-              'field' => 'mat_code.keyword'
-            ]
+    'index' => $indexes[$path_id]['index'],
+    'from' => $from,
+    'body' => [
+      'size' => $size,
+      'query' => $es_query,
+      'aggs' => [
+        'mat_code' => [
+          'terms' => [
+            'field' => 'mat_code.keyword'
           ]
         ]
       ]
+    ]
   ];
 
   return $es_client->search($params);
