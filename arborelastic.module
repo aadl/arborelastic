@@ -26,6 +26,7 @@ function arborelastic_search($path_id, $query, $args = []) {
     $indexes[$parts[0]] = array('index' => $parts[1], 'type' => $parts[2]);
     unset($indexes[$i]);
   }
+  $index = $indexes[$path_id]['index'];
 
   $hosts = [
     [
@@ -51,7 +52,16 @@ function arborelastic_search($path_id, $query, $args = []) {
     }
     elseif ($field == 'sort') {
       $sort_parts = explode('~', $value);
-      $sort_field = $sort_parts[0] . '.keyword';
+      $sort_field = $sort_parts[0];
+
+      // Check if keyword mapping exists for field
+      $mapping = $es_client->indices()->getFieldMapping(['index' => $index, 'field' => $sort_field]);
+      $type_mapping = array_shift($mapping[$index]['mappings']);
+      $field_mapping = $type_mapping[$sort_field]['mapping'][$sort_field];
+      if (isset($field_mapping['fields']['keyword'])) {
+        $sort_field .= '.keyword';
+      }
+
       $sort = [
         $sort_field => [
           'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc') // Default sort decending
@@ -74,7 +84,7 @@ function arborelastic_search($path_id, $query, $args = []) {
 
 
   $params = [
-    'index' => $indexes[$path_id]['index'],
+    'index' => $index,
     'from' => $from,
     'body' => [
       'size' => $size,
