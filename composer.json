@@ -1,0 +1,10 @@
+{
+    "name": "aadl/arborelastic",
+    "description": "Drupal module for custom Elasticsearch results",
+    "type": "drupal-custom-module",
+    "require": {
+        "php": "^7.0",
+        "drupal/core": "^8.0",
+        "elasticsearch/elasticsearch": "^5.0"
+    }
+}
