@@ -6,7 +6,7 @@ arborelastic.admin_form:
   requirements:
     _permission: 'access administration pages'
 arborelastic.home:
-  path: /arborelastic/{path_id}/{query}
+  path: /search/{path_id}/{query}
   defaults:
     _title: 'AADL Search'
     _controller: '\Drupal\arborelastic\Controller\DefaultController::index'
