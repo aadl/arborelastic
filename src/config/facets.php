@@ -46,16 +46,6 @@ $facets['catalog'] = [
       'p' => 'Art Print'
     ]
   ],
-  'New Arrivals' => [
-    'name' => 'sort',
-    'past_week' => 'Last 7 Days',
-    'past_month' => 'Last 30 Days'
-  ],
-  'Fiction / Nonfiction' => [
-    'name' => 'content',
-    'fiction' => 'Fiction',
-    'nonfiction' => 'Nonfiction'
-  ],
   'Audience' => [
     'name' => 'ages',
     'youth' => 'Kids',
