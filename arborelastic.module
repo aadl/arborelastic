@@ -42,6 +42,11 @@ function arborelastic_search($path_id, $query, $args = []) {
   $size = 25; // default number of results to return
   $from = 0;
 
+  // Limit search results to active
+  if ($index == 'bibs') {
+    $args['active'] = 1;
+  }
+
   // Parse Args and add to query string
   foreach ($args as $field => $value) {
     if ($field == 'size') {
