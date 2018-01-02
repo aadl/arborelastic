@@ -17,7 +17,7 @@ $facets['catalog'] = [
       'subsection' => true,
       'a' => 'Book',
       'zb' => 'eBook Download',
-      'ovdb' => 'OverDrive eBook',
+      'oe' => 'OverDrive eBook',
       'x' => 'Graphic Novel',
       'l' => 'Large Print',
       'c' => 'Music Score'
@@ -26,7 +26,7 @@ $facets['catalog'] = [
       'subsection' => true,
       'i' => 'Audiobook',
       'za' => 'Audiobook Download',
-      'ovda' => 'OverDrive eAudiobook'
+      'oa' => 'OverDrive eAudiobook'
     ],
     'Movies & TV' => [
       'subsection' => true,
@@ -45,16 +45,6 @@ $facets['catalog'] = [
       'r' => 'Tools',
       'p' => 'Art Print'
     ]
-  ],
-  'New Arrivals' => [
-    'name' => 'sort',
-    'past_week' => 'Last 7 Days',
-    'past_month' => 'Last 30 Days'
-  ],
-  'Fiction / Nonfiction' => [
-    'name' => 'content',
-    'fiction' => 'Fiction',
-    'nonfiction' => 'Nonfiction'
   ],
   'Audience' => [
     'name' => 'ages',
