@@ -90,7 +90,7 @@ function arborelastic_search($path_id, $query, $args = []) {
 
   $params = [
     'index' => $index,
-    'from' => $from,
+    'from' => $from * $size,
     'body' => [
       'size' => $size,
       'query' => $es_query,
