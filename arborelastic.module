@@ -127,7 +127,8 @@ function arborelastic_theme($existing, $type, $theme, $path) {
         'lists' => NULL,
         'results' => NULL,
         'facets' => NULL,
-        'gridview' => NULL
+        'gridview' => NULL,
+        'pager' => NULL
       ]
     ]
   ];

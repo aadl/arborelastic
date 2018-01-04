@@ -49,11 +49,11 @@ class DefaultController extends ControllerBase {
         '#lists' => $lists,
         '#results' => $response,
         '#facets' => $facets,
-        '#gridview' => $gridview
-      ],
-      [
-        '#type' => 'pager',
-        '#quantity' => 3
+        '#gridview' => $gridview,
+        '#pager' => [
+          '#type' => 'pager',
+          '#quantity' => 3
+        ]
       ]
     ];
   }
