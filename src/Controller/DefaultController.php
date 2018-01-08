@@ -50,6 +50,7 @@ class DefaultController extends ControllerBase {
         '#results' => $response,
         '#facets' => $facets,
         '#gridview' => $gridview,
+        '#cache' => [ 'max-age' => 0 ],
         '#pager' => [
           '#type' => 'pager',
           '#quantity' => 3
