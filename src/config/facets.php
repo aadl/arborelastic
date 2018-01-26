@@ -51,6 +51,19 @@ $facets['catalog'] = [
     'youth' => 'Kids',
     'teen' => 'Teen',
     'adult' => 'Adult'
+  ],
+  'Language' => [
+    'name' => 'lang',
+    'eng' => 'English',
+    'ara' => 'Arabic',
+    'chi' => 'Chinese',
+    'fre' => 'French',
+    'ger' => 'German',
+    'hin' => 'Hindi',
+    'jpn' => 'Japanese',
+    'kor' => 'Korean',
+    'rus' => 'Russian',
+    'spa' => 'Spanish'
   ]
 ];
 
