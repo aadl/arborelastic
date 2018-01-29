@@ -19,6 +19,15 @@ function arborelastic_help($path, $arg) {
 }
 
 function arborelastic_search($path_id, $query, $args = []) {
+  if (strpos($query, '"') === false) {
+    $query = str_replace(',', '', $query);
+    $fuzzy = explode(' ', $query);
+    $query = [];
+    foreach($fuzzy as $fuz) {
+      $query[] = (strlen($fuz) > 3 ? $fuz . '~1' : $fuz);
+    }
+    $query = implode(' ', $query);
+  }
   $indexes = \Drupal::config('arborelastic.settings')->get('arborelastic_indexes');
   $indexes = explode("\n", $indexes);
   foreach ($indexes as $i => $index) {
@@ -74,19 +83,38 @@ function arborelastic_search($path_id, $query, $args = []) {
       ];
     }
     else {
-      if ($field != 'gridview') {
+      if ($field == 'author') {
+        $query .= ' AND ' . $field . ':(' . $value . ')';
+      } elseif ($field != 'gridview') {
         $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
       }
     }
   }
 
   $es_query = [
-    'query_string' => [
-      'query' => $query,
-      'fields' => ['_all']
+    'bool' => [
+      // the extra layer of array brackets is so we can add more to the must/should conditions
+      'must' => [
+        [
+          'query_string' => [
+            'query' => $query,
+            'fields' => ['title^10', 'author^10', '_all'],
+            'default_operator' => 'and'
+          ]
+        ]
+      ],
+      'should' => [
+        [
+          'match' => [
+            'lang' => [
+              'query' => 'eng',
+              'boost' => 300
+            ]
+          ]
+        ]
+      ]
     ]
   ];
-
 
   $params = [
     'index' => $index,
@@ -98,6 +126,11 @@ function arborelastic_search($path_id, $query, $args = []) {
         'mat_code' => [
           'terms' => [
             'field' => 'mat_code.keyword'
+          ]
+        ],
+        'lang' => [
+          'terms' => [
+            'field' => 'lang.keyword'
           ]
         ]
       ]
