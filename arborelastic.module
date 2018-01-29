@@ -85,7 +85,8 @@ function arborelastic_search($path_id, $query, $args = []) {
     else {
       if ($field == 'author') {
         $query .= ' AND ' . $field . ':(' . $value . ')';
-      } elseif ($field != 'gridview') {
+      } 
+      elseif ($field != 'gridview') {
         $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
       }
     }
