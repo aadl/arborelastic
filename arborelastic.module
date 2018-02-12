@@ -19,6 +19,23 @@ function arborelastic_help($path, $arg) {
 }
 
 function arborelastic_search($path_id, $query, $args = []) {
+  $search_fields = [
+    'author',
+    'bib_created',
+    'callnum',
+    'pub_year',
+    'publisher',
+    'subjects',
+    'title'
+  ];
+
+  $is_search_field = array_filter($search_fields, function($k) use($query) {
+    if (strpos($query, $k . ':') !== false) {
+      return true;
+    }
+  });
+  if (count($is_search_field) == 0) $query = str_replace(':', '', $query);
+
   if (strpos($query, '"') === false) {
     $query = str_replace(',', '', $query);
     $fuzzy = explode(' ', $query);
