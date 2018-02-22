@@ -67,8 +67,26 @@ $facets['catalog'] = [
   ]
 ];
 
-$facets['collections'] = [
-
+$facets['community'] = [
+  'Type' => [
+    'name' => 'mat_code',
+    'photo' => 'Photos',
+    'article' => 'Articles',
+    'issue' => 'Issues',
+    'doc' => 'Documents'
+  ],
+  'Old News' => [
+    'name' => 'old_news_taxonomy',
+    '&quot;Old News&quot;' => 'All Old News',
+    '&quot;Agenda&quot;' => 'Agenda',
+    '&quot;Ann Arbor Argus&quot;' => 'Ann Arbor Argus',
+    '&quot;Ann Arbor Argus-Democrat&quot;' => 'Ann Arbor Argus-Democrat',
+    '&quot;Ann Arbor Courier&quot;' => 'Ann Arbor Courier',
+    '&quot;Ann Arbor News&quot;' => 'Ann Arbor News',
+    '&quot;Ann Arbor Sun&quot;' => 'Ann Arbor Sun',
+    '&quot;Michigan Argus&quot;' => 'Michigan Argus',
+    '&quot;Signal of Liberty&quot;' => 'Signal of Liberty',
+  ]
 ];
 
 $facets['website'] = [

@@ -16,14 +16,15 @@ use Drupal\Core\Session\AccountInterface;
 class CatalogFacets extends BlockBase {
 
   public function build() {
+    $type = $this->getConfiguration()['type'];
     include(\Drupal::root() . '/' . drupal_get_path('module', 'arborelastic') . '/src/config/facets.php');
 
     $output = '<form method="get">';
-    $output .= '<span class="no-tabdesk-display">Filter (110 items)</span>';
+    $output .= '<span class="no-tabdesk-display">Filter</span>';
     $output .= '<span class="no-tabdesk-display" id="close-search-facets">X</span>';
     $output .= '<div><button class="button facets-apply">Apply</button>';
     $output .= '<button class="button facets-reset">Reset</button></div>';
-    foreach ($facets['catalog'] as $k => $facet) {
+    foreach ($facets[$type] as $k => $facet) {
       $name = $facet['name'];
       $output .= '<br><div class="facets-toggle"><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span>' . $k . '</div><span class="facets-section">';
       if (isset($facet['has_subsections'])) {
@@ -34,7 +35,9 @@ class CatalogFacets extends BlockBase {
               foreach ($section as $v => $sel) {
                 $checked = '';
                 if (isset($_GET[$name])) {
-                  $checked = (in_array($v, explode(',', $_GET[$name])) ? ' checked' : '');
+                  // strip &quot; where needed
+                  $val = str_replace('&quot;', '"', $v);
+                  $checked = (in_array($val, explode(',', $_GET[$name])) ? ' checked' : '');
                 }
                 if ($v != 'subsection') {
                   $output .= "<span class=\"facet-selection\"><input type=\"checkbox\" name=\"$name\" value=\"$v\" id=\"facet-$v\" class=\"facet-checkbox\" $checked>";
@@ -50,7 +53,9 @@ class CatalogFacets extends BlockBase {
           if ($i != 'name') {
             $checked = '';
             if (isset($_GET[$name])) {
-              $checked = (in_array($i, explode(',', $_GET[$name])) ? ' checked' : '');
+              // strip &quot; where needed
+              $val = str_replace('&quot;', '"', $i);
+              $checked = (in_array($val, explode(',', $_GET[$name])) ? ' checked' : '');
             }
             $output .= "<span class=\"facet-selection\"><input type=\"checkbox\" name=\"$name\" value=\"$i\" id=\"facet-$i\" class=\"facet-checkbox\" $checked>";
             $output .= "<label for=\"facet-$i\">$sel</label></span>";
