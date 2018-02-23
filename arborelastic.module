@@ -92,30 +92,53 @@ function arborelastic_search($path_id, $query, $args = []) {
     }
   }
 
-  $es_query = [
-    'bool' => [
-      // the extra layer of array brackets is so we can add more to the must/should conditions
-      'must' => [
-        [
-          'query_string' => [
-            'query' => $query,
-            'fields' => ['title^10', 'author^10', '_all'],
-            'default_operator' => 'and'
+  if ($path_id == 'community') {
+    $es_query = [
+      'bool' => [
+        'must' => [
+          [
+            'query_string' => [
+              'query' => $query,
+              'fields' => ['_all'],
+              'default_operator' => 'and'
+            ]
           ]
-        ]
-      ],
-      'should' => [
-        [
-          'match' => [
-            'lang' => [
-              'query' => 'eng',
-              'boost' => 300
+        ],
+        'filter' => [
+          [
+            'terms' => [
+              'mat_code' => ['photo', 'issue', 'doc', 'article']
             ]
           ]
         ]
       ]
-    ]
-  ];
+    ];
+  } else {
+    $es_query = [
+      'bool' => [
+        // the extra layer of array brackets is so we can add more to the must/should conditions
+        'must' => [
+          [
+            'query_string' => [
+              'query' => $query,
+              'fields' => ['title^10', 'author^10', '_all'],
+              'default_operator' => 'and'
+            ]
+          ]
+        ],
+        'should' => [
+          [
+            'match' => [
+              'lang' => [
+                'query' => 'eng',
+                'boost' => 300
+              ]
+            ]
+          ]
+        ]
+      ]
+    ];
+  }
 
   $params = [
     'index' => $index,
@@ -162,6 +185,7 @@ function arborelastic_theme($existing, $type, $theme, $path) {
   return [
     'search_results' => [
       'variables' => [
+        'path_id' => NULL,
         'api_key' => NULL,
         'lists' => NULL,
         'results' => NULL,

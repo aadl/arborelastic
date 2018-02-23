@@ -34,7 +34,7 @@ class DefaultController extends ControllerBase {
     $response['mat_names'] = $mat_names;
 
     $block_manager = \Drupal::service('plugin.manager.block');
-    $facets = $block_manager->createInstance('catalog_facets_block')->build();
+    $facets = $block_manager->createInstance('catalog_facets_block', ['type' => $path_id])->build();
 
     // build the pager
     $page = pager_find_page();
@@ -45,6 +45,7 @@ class DefaultController extends ControllerBase {
       [
         '#title' => 'Search',
         '#theme' => 'search_results',
+        '#path_id' => $path_id,
         '#api_key' => $api_key,
         '#lists' => $lists,
         '#results' => $response,
