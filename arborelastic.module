@@ -29,12 +29,14 @@ function arborelastic_search($path_id, $query, $args = []) {
     'title'
   ];
 
+  // ignore colons unless part of a field query
   $is_search_field = array_filter($search_fields, function($k) use($query) {
     if (strpos($query, $k . ':') !== false) return true;
   });
   if (!count($is_search_field)) $query = str_replace(':', '', $query);
 
   if (strpos($query, '"') === false) {
+    // escape these characters unless phrase search
     $search_escapes = [',', '-'];
     $search_replace = ['', ' '];
     $query = str_replace($search_escapes, $search_replace, $query);
