@@ -46,6 +46,11 @@ $facets['catalog'] = [
       'p' => 'Art Print'
     ]
   ],
+  'Fiction / Nonfiction' => [
+    'name' => 'fiction',
+    'true' => 'Fiction',
+    'false' => 'Nonfiction'
+  ],
   'Audience' => [
     'name' => 'ages',
     'youth' => 'Kids',

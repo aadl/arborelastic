@@ -40,8 +40,8 @@ class CatalogFacets extends BlockBase {
                   $checked = (in_array($val, explode(',', $_GET[$name])) ? ' checked' : '');
                 }
                 if ($v != 'subsection') {
-                  $output .= "<span class=\"facet-selection\"><input type=\"checkbox\" name=\"$name\" value=\"$v\" id=\"facet-$v\" class=\"facet-checkbox\" $checked>";
-                  $output .= "<label for=\"facet-$v\">$sel</label></span>";
+                  $output .= "<span class=\"facet-selection\"><input type=\"checkbox\" name=\"$name\" value=\"$v\" id=\"facet-$name-$v\" class=\"facet-checkbox\" $checked>";
+                  $output .= "<label for=\"facet-$name-$v\">$sel</label></span>";
                 }
               }
               $output .= '</span>';
@@ -57,8 +57,8 @@ class CatalogFacets extends BlockBase {
               $val = str_replace('&quot;', '"', $i);
               $checked = (in_array($val, explode(',', $_GET[$name])) ? ' checked' : '');
             }
-            $output .= "<span class=\"facet-selection\"><input type=\"checkbox\" name=\"$name\" value=\"$i\" id=\"facet-$i\" class=\"facet-checkbox\" $checked>";
-            $output .= "<label for=\"facet-$i\">$sel</label></span>";
+            $output .= "<span class=\"facet-selection\"><input type=\"checkbox\" name=\"$name\" value=\"$i\" id=\"facet-$name-$i\" class=\"facet-checkbox\" $checked>";
+            $output .= "<label for=\"facet-$name-$i\">$sel</label></span>";
           }
         }
       }
