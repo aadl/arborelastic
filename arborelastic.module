@@ -134,26 +134,35 @@ function arborelastic_search($path_id, $query, $args = []) {
     ];
   } else {
     $es_query = [
-      'bool' => [
-        // the extra layer of array brackets is so we can add more to the must/should conditions
-        'must' => [
-          [
-            'query_string' => [
-              'query' => $query,
-              'fields' => ['title^10', 'author^10', '_all'],
-              'default_operator' => 'and'
-            ]
-          ]
-        ],
-        'should' => [
-          [
-            'match' => [
-              'lang' => [
-                'query' => 'eng',
-                'boost' => 300
+      'function_score' => [
+        'query' => [
+          'bool' => [
+            // the extra layer of array brackets is so we can add more to the must/should conditions
+            'must' => [
+              [
+                'query_string' => [
+                  'query' => $query,
+                  'fields' => ['title^10', 'author^10', '_all'],
+                  'default_operator' => 'and'
+                ]
+              ]
+            ],
+            'should' => [
+              [
+                'match' => [
+                  'lang' => [
+                    'query' => 'eng',
+                    'boost' => 300
+                  ]
+                ]
               ]
             ]
           ]
+        ],
+        'field_value_factor' => [
+          'field' => 'popular_alltime',
+          'factor' => 1.5,
+          'missing' => 0
         ]
       ]
     ];
@@ -196,7 +205,7 @@ function arborelastic_search($path_id, $query, $args = []) {
 
   $result['cur_page'] = $from;
   $result['size'] = $size;
-
+  kint($result);
   return $result;
 }
 
