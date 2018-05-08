@@ -157,11 +157,11 @@ function arborelastic_search($path_id, $query, $args = []) {
                 ]
               ],
               [
-                'match' => [
-                  'title' => [
-                    'query' => str_replace('~1', '', $query),
-                    'boost' => 10
-                  ]
+                // this is used to boost exact matches higher
+                'query_string' => [
+                  'query' => str_replace('~1', '', $query),
+                  'fields' => ['title^10', 'author^10'],
+                  'default_operator' => 'and'
                 ]
               ]
             ]
