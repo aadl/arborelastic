@@ -132,6 +132,31 @@ function arborelastic_search($path_id, $query, $args = []) {
         ]
       ]
     ];
+  } elseif ($path_id == 'website') {
+    $es_query = [
+      'bool' => [
+        'must' => [
+          [
+            'query_string' => [
+              'query' => $query,
+              'fields' => ['_all'],
+              'default_operator' => 'and'
+            ]
+          ]
+        ],
+        // 'should' => [
+          
+        // ]
+      ]
+    ];
+    $es_query['bool']['must'][] = [
+      'range' => [
+        'field_event_start' => [
+          'gte' => 'now',
+          'format' => "yyyy-MM-dd'T'HH:mm:ss"
+        ]
+      ]
+    ];
   } else {
     $es_query = [
       'function_score' => [

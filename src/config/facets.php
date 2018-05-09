@@ -92,5 +92,38 @@ $facets['community'] = [
 ];
 
 $facets['website'] = [
-
+  'Type' => [
+    'name' => 'mat_code',
+    'page' => 'Page',
+    'story' => 'Staff Post',
+    'pub_event' => 'Event'
+  ],
+  'Event Location' => [
+    'name' => 'location_name',
+    'downtown' => 'Downtown',
+    'malletts' => 'Malletts Creek',
+    'pittsfield' => 'Pittsfield',
+    'traverwood' => 'Traverwood',
+    'westgate' => 'Westgate'
+  ],
+  'Event Age' => [
+    'name' => 'brochure_type',
+    'adult' => 'Adult',
+    'kid,jump' => 'Kid',
+    'teen,axis' => 'Teen'
+  ],
+  'Event Types' => [
+    'name' => 'event_categories',
+    'art' => 'Art',
+    'author events' => 'Author Events',
+    'crafts' => 'Crafts',
+    'film/video events' => 'Film/Video Events',
+    'games' => 'Games',
+    'performers' => 'Performers',
+    'tournaments' => 'Tournaments',
+    'tutoring' => 'Tutoring',
+    'workshops &amp; classes' => 'Workshops &amp; Classes',
+    'youth play groups' => 'Youth Playgroups',
+    'youth storytimes' => 'Youth Storytimes'
+  ]
 ];
