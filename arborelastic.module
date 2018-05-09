@@ -155,6 +155,14 @@ function arborelastic_search($path_id, $query, $args = []) {
                     'boost' => 300
                   ]
                 ]
+              ],
+              [
+                // this is used to boost exact matches higher
+                'query_string' => [
+                  'query' => str_replace('~1', '', $query),
+                  'fields' => ['title^10', 'author^10'],
+                  'default_operator' => 'and'
+                ]
               ]
             ]
           ]
