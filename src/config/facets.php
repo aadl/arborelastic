@@ -92,11 +92,9 @@ $facets['community'] = [
 ];
 
 $facets['website'] = [
-  'Type' => [
-    'name' => 'mat_code',
-    'page' => 'Page',
-    'story' => 'Staff Post',
-    'pub_event' => 'Event'
+  'Past Events' => [
+    'name' => 'past_events',
+    'true' => 'Include Past Events'
   ],
   'Event Location' => [
     'name' => 'location_name',
@@ -107,10 +105,12 @@ $facets['website'] = [
     'westgate' => 'Westgate'
   ],
   'Event Age' => [
-    'name' => 'brochure_type',
-    'adult' => 'Adult',
-    'kid,jump' => 'Kid',
-    'teen,axis' => 'Teen'
+    'name' => 'event_ages',
+    'Babies' => 'Babies',
+    'Preschool' => 'Preschool',
+    'Elementary' => 'Elementary',
+    'Teen' => 'Teen',
+    'Adult' => 'Adult'
   ],
   'Event Types' => [
     'name' => 'event_categories',
