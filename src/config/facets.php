@@ -92,6 +92,12 @@ $facets['community'] = [
 ];
 
 $facets['website'] = [
+  'Type' => [
+    'name' => 'mat_code',
+    'page' => 'Page',
+    'story' => 'Staff News & Reviews',
+    'pub_event' => 'Event'
+  ],
   'Past Events' => [
     'name' => 'past_events',
     'true' => 'Include Past Events'
