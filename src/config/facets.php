@@ -92,5 +92,60 @@ $facets['community'] = [
 ];
 
 $facets['website'] = [
-
+  'Type' => [
+    'name' => 'mat_code',
+    'page' => 'Page',
+    'story' => 'Staff News & Reviews',
+    'pub_event' => 'Event'
+  ],
+  'Past Events' => [
+    'name' => 'past_events',
+    'true' => 'Include Past Events'
+  ],
+  'Event Location' => [
+    'name' => 'location_name',
+    'downtown' => 'Downtown',
+    'malletts' => 'Malletts Creek',
+    'pittsfield' => 'Pittsfield',
+    'traverwood' => 'Traverwood',
+    'westgate' => 'Westgate'
+  ],
+  'Event Age' => [
+    'name' => 'event_ages',
+    'Babies' => 'Babies',
+    'Preschool' => 'Preschool',
+    'Elementary' => 'Elementary',
+    'Teen' => 'Teen',
+    'Adult' => 'Adult'
+  ],
+  'Event Types' => [
+    'name' => 'event_categories',
+    'art' => 'Art',
+    'author events' => 'Author Events',
+    'book discussions' => 'Book Discussions',
+    'chefs and cooking' => 'Chefs & Cooking',
+    'comics' => 'Comics',
+    'computer classes' => 'Computer Classes',
+    'concerts' => 'Concerts & Music',
+    'contests' => 'Contests',
+    'crafts' => 'Crafts',
+    'exhibits' => 'Exhibits',
+    'fiber arts' => 'Fiber Arts',
+    'film' => 'Film/Video Events',
+    'games' => 'Games',
+    'health and wellness' => 'Health & Wellness',
+    'homework help' => 'Homework Help',
+    'lectures' => 'Lectures/Panel Discussions',
+    'local creator' => 'Local Creator',
+    'local history' => 'Local History',
+    'nature' => 'Nature & The Environment',
+    'performers' => 'Performers',
+    'sci' => 'Sci/Tech',
+    'special events' => 'Special Events',
+    'tournaments' => 'Tournaments',
+    'tutoring' => 'Tutoring',
+    'workshops' => 'Workshops &amp; Classes',
+    'youth play groups' => 'Youth Playgroups',
+    'youth storytimes' => 'Youth Storytimes'
+  ]
 ];

@@ -105,7 +105,7 @@ function arborelastic_search($path_id, $query, $args = []) {
       if ($field == 'author') {
         $query .= ' AND ' . $field . ':(' . $value . ')';
       } 
-      elseif ($field != 'gridview') {
+      elseif ($field != 'gridview' && $field != 'past_events') {
         $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
       }
     }
@@ -132,6 +132,40 @@ function arborelastic_search($path_id, $query, $args = []) {
         ]
       ]
     ];
+  } elseif ($path_id == 'website') {
+    $es_query = [
+      'bool' => [
+        'must' => [
+          [
+            'query_string' => [
+              'query' => $query,
+              'fields' => ['_all'],
+              'default_operator' => 'and'
+            ]
+          ]
+        ],
+        'must_not' => [
+          [
+            'range' => [
+              'field_event_start' => [
+                'lte' => 'now',
+                'format' => "yyyy-MM-dd'T'HH:mm:ss"
+              ]
+            ]
+          ]
+        ],
+        'filter' => [
+          [
+            'terms' => [
+              'mat_code' => ['page', 'story', 'pub_event']
+            ]
+          ]
+        ]
+      ]
+    ];
+    if ($args['past_events']) {
+      unset($es_query['bool']['must_not']);
+    }
   } else {
     $es_query = [
       'function_score' => [
