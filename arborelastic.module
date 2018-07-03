@@ -104,7 +104,16 @@ function arborelastic_search($path_id, $query, $args = []) {
     else {
       if ($field == 'author') {
         $query .= ' AND ' . $field . ':(' . $value . ')';
-      } 
+      }
+      elseif ($field == 'title') {
+        $fuzzy = explode(' ', $value);
+        $fuzzy_val = [];
+        foreach($fuzzy as $fuz) {
+          $fuzzy_val[] = (strlen($fuz) > 3 ? $fuz . '~1' : $fuz);
+        }
+        $fuzzy_val = implode(' ', $fuzzy_val);
+        $query .= ' AND ' . $field . ':(' . $fuzzy_val . ')';
+      }
       elseif ($field != 'gridview' && $field != 'past_events') {
         $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
       }
@@ -247,7 +256,7 @@ function arborelastic_search($path_id, $query, $args = []) {
 
   $result['cur_page'] = $from;
   $result['size'] = $size;
-
+  
   return $result;
 }
 
