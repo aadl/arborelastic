@@ -21,6 +21,7 @@ function arborelastic_help($path, $arg) {
 function arborelastic_search($path_id, $query, $args = []) {
   $search_fields = [
     'author',
+    'artist',
     'bib_created',
     'callnum',
     'callnums',
