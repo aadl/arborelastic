@@ -64,12 +64,21 @@ class CatalogFacets extends BlockBase {
       }
       $output .= '</span>';
     }
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    if ($user->hasPermission('access accountfix')) {
+      $checked = (isset($_GET['active']) ? ' checked' : '');
+      $output .= '<br><div class="facets-toggle"><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span>Suppressed</div><span class="facets-section">';
+        $output .= '<span class="facet-selection"><input type="checkbox" name="active" value="0,1" id="facet-active" class="facet-checkbox"' . $checked . '>';
+        $output .= '<label for="facet-active">Include Suppressed</label></span>';
+        $output .= '</span>';
+    }
     $output .= '<button type="submit" class="button facets-apply">Apply</button>';
     $output .= '<button class="button facets-reset">Reset</button>';
     $output .= '</form>';
 
     return [
       '#markup' => $output,
+      '#cache' => ['max-age' => 0],
       '#allowed_tags' => ['form', 'span', 'div', 'input', 'label', 'br', 'button']
     ];
   }
