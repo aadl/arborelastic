@@ -178,6 +178,11 @@ function arborelastic_search($path_id, $query, $args = []) {
     if ($args['past_events']) {
       unset($es_query['bool']['must_not']);
     }
+    if (isset($args['mat_code'])) {
+      if ($args['mat_code'] == 'pub_event') {
+        $sort = ['field_event_start' => ['order' => 'asc']];
+      }
+    }
   } else {
     $es_query = [
       'function_score' => [
