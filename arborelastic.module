@@ -109,7 +109,8 @@ function arborelastic_search($path_id, $query, $args = []) {
       $field_exceptions = [
         'gridview',
         'past_events',
-        'oldnews_date'
+        'oldnews_date',
+        'reading_level'
       ];
       if ($field == 'author') {
         $query .= ' AND ' . $field . ':(' . $value . ')';
@@ -155,9 +156,9 @@ function arborelastic_search($path_id, $query, $args = []) {
       $es_query['bool']['must'][] = [
         'range' => [
           'oldnews_date' => [
-            'gte' => $oldnews_date[0],
-            'lte' => $oldnews_date[1],
-            'format' => 'date'
+            'gte' => strtotime($oldnews_date[0]),
+            'lte' => strtotime($oldnews_date[1]),
+            'format' => 'epoch_second'
           ]
         ]
       ];
@@ -243,6 +244,25 @@ function arborelastic_search($path_id, $query, $args = []) {
         ]
       ]
     ];
+    if (isset($args['reading_level'])) {
+      if (intval($args['reading_level'])) {
+        $es_query['function_score']['query']['bool']['must'][] = [
+          'range' => [
+            'reading_level.lexile' => [
+              'gte' => $args['reading_level'],
+              'lte' => $args['reading_level'] + 99
+            ]
+          ]
+        ];
+      } else {
+        $es_query['function_score']['query']['bool']['filter'] = [
+            'term' => [
+              'reading_level.aaps' => $args['reading_level']
+            ]
+          
+        ];
+      }
+    }
   }
 
   $params = [
@@ -282,6 +302,8 @@ function arborelastic_search($path_id, $query, $args = []) {
 
   $result['cur_page'] = $from;
   $result['size'] = $size;
+
+  kint($es_query['function_score']);
   
   return $result;
 }
