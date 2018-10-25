@@ -302,8 +302,6 @@ function arborelastic_search($path_id, $query, $args = []) {
 
   $result['cur_page'] = $from;
   $result['size'] = $size;
-
-  kint($es_query['function_score']);
   
   return $result;
 }
