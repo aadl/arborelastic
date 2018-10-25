@@ -105,6 +105,12 @@ function arborelastic_search($path_id, $query, $args = []) {
       ];
     }
     else {
+      // fields to ignore adding to es query
+      $field_exceptions = [
+        'gridview',
+        'past_events',
+        'oldnews_date'
+      ];
       if ($field == 'author') {
         $query .= ' AND ' . $field . ':(' . $value . ')';
       }
@@ -117,7 +123,7 @@ function arborelastic_search($path_id, $query, $args = []) {
         $fuzzy_val = implode(' ', $fuzzy_val);
         $query .= ' AND ' . $field . ':(' . $fuzzy_val . ')';
       }
-      elseif ($field != 'gridview' && $field != 'past_events') {
+      elseif (!in_array($field, $field_exceptions)) {
         $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
       }
     }
@@ -144,6 +150,18 @@ function arborelastic_search($path_id, $query, $args = []) {
         ]
       ]
     ];
+    if ($args['oldnews_date']) {
+      $oldnews_date = explode(',', $args['oldnews_date']);
+      $es_query['bool']['must'][] = [
+        'range' => [
+          'oldnews_date' => [
+            'gte' => $oldnews_date[0],
+            'lte' => $oldnews_date[1],
+            'format' => 'date'
+          ]
+        ]
+      ];
+    }
   } elseif ($path_id == 'website') {
     $es_query = [
       'bool' => [
@@ -159,9 +177,9 @@ function arborelastic_search($path_id, $query, $args = []) {
         'must_not' => [
           [
             'range' => [
-              'field_event_start' => [
+              'field_event_end' => [
                 'lte' => 'now',
-                'format' => "yyyy-MM-dd'T'HH:mm:ss"
+                'format' => 'date_hour_minute_second'
               ]
             ]
           ]
