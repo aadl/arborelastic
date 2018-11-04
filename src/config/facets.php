@@ -96,7 +96,8 @@ $facets['website'] = [
     'name' => 'mat_code',
     'page' => 'Page',
     'story' => 'Staff News & Reviews',
-    'pub_event' => 'Event'
+    'pub_event' => 'Event',
+    'media' => 'Media'
   ],
   'Past Events' => [
     'name' => 'past_events',
