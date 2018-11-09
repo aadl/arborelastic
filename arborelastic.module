@@ -156,8 +156,8 @@ function arborelastic_search($path_id, $query, $args = []) {
       $es_query['bool']['must'][] = [
         'range' => [
           'oldnews_date' => [
-            'gte' => strtotime($oldnews_date[0]),
-            'lte' => strtotime($oldnews_date[1]),
+            'gte' => strtotime('01-01-' . $oldnews_date[0]),
+            'lte' => strtotime('01-01-' . $oldnews_date[1]),
             'format' => 'epoch_second'
           ]
         ]
