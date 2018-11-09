@@ -65,12 +65,30 @@ class CatalogFacets extends BlockBase {
       $output .= '</span>';
     }
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    if ($type == 'community') {
+      $checked = (isset($_GET['oldnews_date']) ? ' checked' : '');
+      if ($checked) $years = explode(',', $_GET['oldnews_date']);
+      $output .= '<br><div class="facets-toggle"><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span>Year Range</div><span class="facets-section">';
+      $output .= '<span class="facet-selection"><input type="checkbox" name="oldnews_date" value="0" id="facet-oldnews_date" class="facet-checkbox"' . $checked . '>';
+      $output .= '<label for="facet-oldnews_date">Limit to Years</label><br>
+        <input class="oldnews-date-search" type="text" value="' . ($years[0] ?? '') . '"> to <input class="oldnews-date-search" type="text" value="' . ($years[1] ?? '') . '">
+        </span>';
+      $output .= '</span>';
+    }
     if ($user->hasPermission('access accountfix')) {
-      $checked = (isset($_GET['active']) ? ' checked' : '');
-      $output .= '<br><div class="facets-toggle"><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span>Suppressed</div><span class="facets-section">';
-        $output .= '<span class="facet-selection"><input type="checkbox" name="active" value="0,1" id="facet-active" class="facet-checkbox"' . $checked . '>';
-        $output .= '<label for="facet-active">Include Suppressed</label></span>';
-        $output .= '</span>';
+      if ($type == 'catalog') {
+        $checked = (isset($_GET['active']) ? ' checked' : '');
+        $output .= '<br><div class="facets-toggle"><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span>Suppressed</div><span class="facets-section">';
+          $output .= '<span class="facet-selection"><input type="checkbox" name="active" value="0,1" id="facet-active" class="facet-checkbox"' . $checked . '>';
+          $output .= '<label for="facet-active">Include Suppressed</label></span>';
+          $output .= '</span>';
+        } elseif ($type == 'community') {
+          $checked = (isset($_GET['photo_indexed']) ? ' checked' : '');
+          $output .= '<br><div class="facets-toggle"><span class="facets-toggle-icon"><span class="facets-toggle-symbol">-</span></span>Photo Indexed</div><span class="facets-section">';
+          $output .= '<span class="facet-selection"><input type="checkbox" name="photo_indexed" value="0" id="facet-photo_indexed" class="facet-checkbox"' . $checked . '>';
+          $output .= '<label for="facet-photo_indexed">Not Indexed</label></span>';
+          $output .= '</span>';
+        }
     }
     $output .= '<button type="submit" class="button facets-apply">Apply</button>';
     $output .= '<button class="button facets-reset">Reset</button>';
