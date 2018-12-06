@@ -75,7 +75,8 @@ $facets['community'] = [
     'photo' => 'Photos',
     'article' => 'Articles',
     'issue' => 'Issues',
-    'doc' => 'Documents'
+    'doc' => 'Documents',
+    'media' => 'Media'
   ],
   'Old News' => [
     'name' => 'old_news_taxonomy',
