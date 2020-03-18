@@ -22,7 +22,8 @@ $facets['catalog'] = [
       'l' => 'Large Print',
       'c' => 'Music Score',
       's' => 'Magazines',
-      'n' => 'Newspapers'
+      'n' => 'Newspapers',
+      'zp' => 'Knitting Pattern Download'
     ],
     'Audiobooks' => [
       'subsection' => true,
