@@ -82,6 +82,9 @@ function arborelastic_search($path_id, $query, $args = []) {
 
   // Parse Args and add to query string
   foreach ($args as $field => $value) {
+    if ($field == 'fbclid') {
+      continue;
+    }
     if ($field == 'size') {
       $size = $value;
     }
