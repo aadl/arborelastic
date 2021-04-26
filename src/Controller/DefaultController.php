@@ -38,9 +38,9 @@ class DefaultController extends ControllerBase {
 
     // build the pager
     $pager_manager = \Drupal::service('pager.manager');
-    $page = $pager_manager->findPage();
+    $page = \Drupal::service('pager.parameters')->findPage();
     $size = (isset($_GET['size']) ? $_GET['size'] : 25);
-    $pager = $pager_manager->defaultInitialize($response['hits']['total'], $size);
+    $pager =\Drupal::service('pager.manager')->createPager($response['hits']['total'], $size);
 
     return [
       [
