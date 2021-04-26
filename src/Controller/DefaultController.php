@@ -37,9 +37,10 @@ class DefaultController extends ControllerBase {
     $facets = $block_manager->createInstance('catalog_facets_block', ['type' => $path_id])->build();
 
     // build the pager
-    $page = pager_find_page();
+    $pager_manager = \Drupal::service('pager.manager');
+    $page = \Drupal::service('pager.parameters')->findPage();
     $size = (isset($_GET['size']) ? $_GET['size'] : 25);
-    $pager = pager_default_initialize($response['hits']['total'], $size);
+    $pager =\Drupal::service('pager.manager')->createPager($response['hits']['total'], $size);
 
     return [
       [
