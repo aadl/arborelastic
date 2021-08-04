@@ -50,7 +50,7 @@ class CatalogFacets extends BlockBase {
         }
       } else {
         foreach ($facet as $i => $sel) {
-          if ($i != 'name') {
+          if ($i !== 'name') {
             $checked = '';
             if (isset($_GET[$name])) {
               // strip &quot; where needed
