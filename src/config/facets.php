@@ -22,6 +22,7 @@ $facets['catalog'] = [
       'l' => 'Large Print',
       'c' => 'Music Score',
       's' => 'Magazines',
+      'om' => 'OverDrive eMagazines',
       'n' => 'Newspapers',
       'zp' => 'Knitting Pattern Download'
     ],
