@@ -3,7 +3,6 @@
     "description": "Drupal module for custom Elasticsearch results",
     "type": "drupal-custom-module",
     "require": {
-        "php": "^7.0",
-        "elasticsearch/elasticsearch": "^7.0"
+        "php": "^7.0"
     }
 }
