@@ -115,7 +115,8 @@ function arborelastic_search($path_id, $query, $args = []) {
         'gridview',
         'past_events',
         'oldnews_date',
-        'reading_level'
+        'reading_level',
+        'request_only'
       ];
       if ($field == 'author') {
         $query .= ' AND ' . $field . ':(' . $value . ')';
@@ -268,6 +269,13 @@ function arborelastic_search($path_id, $query, $args = []) {
           
         ];
       }
+    }
+    if (isset($args['request_only'])) {
+      $es_query['function_score']['query']['bool']['must'][] = [
+        'term' => [
+          'flags.request_only' => $args['request_only']
+        ]
+      ];
     }
   }
 
