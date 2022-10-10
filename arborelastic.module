@@ -116,7 +116,11 @@ function arborelastic_search($path_id, $query, $args = []) {
         'past_events',
         'oldnews_date',
         'reading_level',
-        'request_only'
+        'request_only',
+        'pk_campaign',
+        'pk_kwd',
+        'mtm_campaign',
+        'mtm_kwd'
       ];
       if ($field == 'author') {
         $query .= ' AND ' . $field . ':(' . $value . ')';
