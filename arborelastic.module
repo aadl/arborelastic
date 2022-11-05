@@ -123,7 +123,7 @@ function arborelastic_search($path_id, $query, $args = []) {
         'mtm_kwd'
       ];
       if ($field == 'author') {
-        $query .= ' AND ' . $field . ':(' . $value . ')';
+        $query .= ' AND ' . $field . '.folded:(' . $value . ')';
       }
       elseif ($field == 'title') {
         $fuzzy = explode(' ', $value);
@@ -132,7 +132,7 @@ function arborelastic_search($path_id, $query, $args = []) {
           $fuzzy_val[] = (strlen($fuz) > 3 ? $fuz . '~1' : $fuz);
         }
         $fuzzy_val = implode(' ', $fuzzy_val);
-        $query .= ' AND ' . $field . ':(' . $fuzzy_val . ')';
+        $query .= ' AND ' . $field . '.folded:(' . $fuzzy_val . ')';
       }
       elseif (!in_array($field, $field_exceptions)) {
         $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
@@ -223,7 +223,7 @@ function arborelastic_search($path_id, $query, $args = []) {
               [
                 'query_string' => [
                   'query' => $query,
-                  'fields' => ['title^10', 'author^10', 'artist^10', '_all'],
+                  'fields' => ['title.folded^10', 'author.folded^10', 'artist^10', '_all'],
                   'default_operator' => 'and'
                 ]
               ]
@@ -241,7 +241,7 @@ function arborelastic_search($path_id, $query, $args = []) {
                 // this is used to boost exact matches higher
                 'query_string' => [
                   'query' => str_replace('~1', '', $query),
-                  'fields' => ['title^20', 'author^15', 'artist^15'],
+                  'fields' => ['title.folded^20', 'author.folded^15', 'artist^15'],
                   'default_operator' => 'and'
                 ]
               ]
@@ -270,7 +270,7 @@ function arborelastic_search($path_id, $query, $args = []) {
             'term' => [
               'reading_level.aaps' => $args['reading_level']
             ]
-          
+
         ];
       }
     }
@@ -320,7 +320,7 @@ function arborelastic_search($path_id, $query, $args = []) {
 
   $result['cur_page'] = $from;
   $result['size'] = $size;
-  
+
   return $result;
 }
 
