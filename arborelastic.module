@@ -96,7 +96,7 @@ function arborelastic_search($path_id, $query, $args = []) {
       $sort_field = $sort_parts[0];
 
       // Check if keyword mapping exists for field
-      $mapping = $es_client->indices()->getFieldMapping(['index' => $index, 'field' => $sort_field]);
+      $mapping = $es_client->indices()->getFieldMapping(['index' => $index, 'fields' => $sort_field]);
       $type_mapping = array_shift($mapping[$index]['mappings']);
       $field_mapping = $type_mapping[$sort_field]['mapping'][$sort_field];
       if (isset($field_mapping['fields']['keyword'])) {
