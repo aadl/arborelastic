@@ -45,7 +45,7 @@ class ArborelasticAdminForm extends ConfigFormBase {
     return ['arborelastic.settings'];
   }
 
-  public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form = [];
     $form['arborelastic_host'] = [
       '#type' => 'textfield',

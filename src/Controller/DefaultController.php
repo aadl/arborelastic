@@ -5,6 +5,7 @@
 
 namespace Drupal\arborelastic\Controller;
 
+use Drupal\user\Entity\User;
 use Drupal\Core\Controller\ControllerBase;
 
 /**
@@ -13,7 +14,7 @@ use Drupal\Core\Controller\ControllerBase;
 class DefaultController extends ControllerBase {
 
   public function index($path_id, $query) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     if ($user) {
       $api_key = $user->get('field_api_key')->value;
       $lists = arborcat_lists_get_lists($user->get('uid')->value);

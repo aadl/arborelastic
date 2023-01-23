@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\arborelastic\Plugin\Block;
 
+use Drupal\user\Entity\User;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Session\AccountInterface;
@@ -17,7 +18,7 @@ class CatalogFacets extends BlockBase {
 
   public function build() {
     $type = $this->getConfiguration()['type'];
-    include(\Drupal::root() . '/' . drupal_get_path('module', 'arborelastic') . '/src/config/facets.php');
+    include(\Drupal::root() . '/' . \Drupal::service('extension.list.module')->getPath('arborelastic') . '/src/config/facets.php');
 
     $output = '<form method="get">';
     $output .= '<span class="no-tabdesk-display">Filter</span>';
@@ -64,7 +65,7 @@ class CatalogFacets extends BlockBase {
       }
       $output .= '</span>';
     }
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     if ($type == 'community') {
       $checked = (isset($_GET['oldnews_date']) ? ' checked' : '');
       if ($checked) $years = explode(',', $_GET['oldnews_date']);
