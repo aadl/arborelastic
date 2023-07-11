@@ -129,16 +129,14 @@ function arborelastic_search($path_id, $query, $args = [])
       }
     }
   }
-
   if ($path_id == 'community') {
     $es_query = [
       'bool' => [
         'must' => [
           [
-            'query_string' => [
+            'multi_match' => [
               'query' => $query,
-              'fields' => ['_all'],
-              'default_operator' => 'and'
+              'fields' => ['*'],
             ]
           ]
         ],
@@ -169,10 +167,9 @@ function arborelastic_search($path_id, $query, $args = [])
       'bool' => [
         'must' => [
           [
-            'query_string' => [
+            'multi_match' => [
               'query' => $query,
-              'fields' => ['_all'],
-              'default_operator' => 'and'
+              'fields' => ['*'],
             ]
           ]
         ],
@@ -213,7 +210,7 @@ function arborelastic_search($path_id, $query, $args = [])
               [
                 'query_string' => [
                   'query' => $query,
-                  'fields' => ['title^20', 'author^10', 'artist^10', '_all'],
+                  'fields' => ['title.folded^20', 'author.folded^10', 'artist.folded^10', '_all'],
                   'default_operator' => 'and'
                 ]
               ]
@@ -260,7 +257,6 @@ function arborelastic_search($path_id, $query, $args = [])
           'term' => [
             'reading_level.aaps' => $args['reading_level']
           ]
-
         ];
       }
     }
