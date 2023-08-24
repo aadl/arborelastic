@@ -6,7 +6,8 @@ use Elasticsearch\ClientBuilder;
  * Display help and module information
  * @return help text for section
  */
-function arborelastic_help($path, $arg) {
+function arborelastic_help($path, $arg)
+{
   $output = '';
 
   switch ($path) {
@@ -18,7 +19,8 @@ function arborelastic_help($path, $arg) {
   return $output;
 }
 
-function arborelastic_search($path_id, $query, $args = []) {
+function arborelastic_search($path_id, $query, $args = [])
+{
   $search_fields = [
     'author',
     'artist',
@@ -34,7 +36,7 @@ function arborelastic_search($path_id, $query, $args = []) {
   ];
 
   // ignore colons unless part of a field query
-  $is_search_field = array_filter($search_fields, function($k) use($query) {
+  $is_search_field = array_filter($search_fields, function ($k) use ($query) {
     if (strpos($query, $k . ':') !== false) return true;
   });
   if (!count($is_search_field)) $query = str_replace(':', '', $query);
@@ -46,7 +48,7 @@ function arborelastic_search($path_id, $query, $args = []) {
     $query = str_replace($search_escapes, $search_replace, $query);
     $fuzzy = explode(' ', $query);
     $query = [];
-    foreach($fuzzy as $fuz) {
+    foreach ($fuzzy as $fuz) {
       $query[] = (strlen($fuz) > 3 ? $fuz . '~1' : $fuz);
     }
     $query = implode(' ', $query);
@@ -56,22 +58,15 @@ function arborelastic_search($path_id, $query, $args = []) {
   $indexes = explode("\n", $indexes);
   foreach ($indexes as $i => $index) {
     $parts = explode(':', $index);
-    $indexes[$parts[0]] = array('index' => $parts[1], 'type' => $parts[2]);
+    $indexes[$parts[0]] = array('index' => trim($parts[1]));
     unset($indexes[$i]);
   }
   $index = $indexes[$path_id]['index'];
 
   $hosts = [
-    [
-      'host' => \Drupal::config('arborelastic.settings')->get('arborelastic_host'),
-      'port' => \Drupal::config('arborelastic.settings')->get('arborelastic_port'),
-      'user' => \Drupal::config('arborelastic.settings')->get('arborelastic_user'),
-      'pass' => \Drupal::config('arborelastic.settings')->get('arborelastic_pass'),
-    ]
+    \Drupal::config('arborelastic.settings')->get('arborelastic_host') . ':' .  \Drupal::config('arborelastic.settings')->get('arborelastic_port'),
   ];
-
   $es_client = ClientBuilder::create()->setHosts($hosts)->build();
-
   $size = 25; // default number of results to return
   $from = 0;
 
@@ -87,11 +82,9 @@ function arborelastic_search($path_id, $query, $args = []) {
     }
     if ($field == 'size') {
       $size = $value;
-    }
-    elseif ($field == 'page') {
+    } elseif ($field == 'page') {
       $from = $value;
-    }
-    elseif ($field == 'sort') {
+    } elseif ($field == 'sort') {
       $sort_parts = explode('~', $value);
       $sort_field = $sort_parts[0];
 
@@ -108,8 +101,7 @@ function arborelastic_search($path_id, $query, $args = []) {
           'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc') // Default sort decending
         ]
       ];
-    }
-    else {
+    } else {
       // fields to ignore adding to es query
       $field_exceptions = [
         'gridview',
@@ -124,31 +116,27 @@ function arborelastic_search($path_id, $query, $args = []) {
       ];
       if ($field == 'author') {
         $query .= ' AND ' . $field . '.folded:(' . $value . ')';
-      }
-      elseif ($field == 'title') {
+      } elseif ($field == 'title') {
         $fuzzy = explode(' ', $value);
         $fuzzy_val = [];
-        foreach($fuzzy as $fuz) {
+        foreach ($fuzzy as $fuz) {
           $fuzzy_val[] = (strlen($fuz) > 3 ? $fuz . '~1' : $fuz);
         }
         $fuzzy_val = implode(' ', $fuzzy_val);
         $query .= ' AND ' . $field . '.folded:(' . $fuzzy_val . ')';
-      }
-      elseif (!in_array($field, $field_exceptions)) {
+      } elseif (!in_array($field, $field_exceptions)) {
         $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
       }
     }
   }
-
   if ($path_id == 'community') {
     $es_query = [
       'bool' => [
         'must' => [
           [
-            'query_string' => [
+            'multi_match' => [
               'query' => $query,
-              'fields' => ['_all'],
-              'default_operator' => 'and'
+              'fields' => ['*'],
             ]
           ]
         ],
@@ -179,10 +167,9 @@ function arborelastic_search($path_id, $query, $args = []) {
       'bool' => [
         'must' => [
           [
-            'query_string' => [
+            'multi_match' => [
               'query' => $query,
-              'fields' => ['_all'],
-              'default_operator' => 'and'
+              'fields' => ['*'],
             ]
           ]
         ],
@@ -223,7 +210,7 @@ function arborelastic_search($path_id, $query, $args = []) {
               [
                 'query_string' => [
                   'query' => $query,
-                  'fields' => ['title.folded^10', 'author.folded^10', 'artist^10', '_all'],
+                  'fields' => ['title.folded^20', 'author.folded^10', 'artist.folded^10', '_all'],
                   'default_operator' => 'and'
                 ]
               ]
@@ -241,7 +228,7 @@ function arborelastic_search($path_id, $query, $args = []) {
                 // this is used to boost exact matches higher
                 'query_string' => [
                   'query' => str_replace('~1', '', $query),
-                  'fields' => ['title.folded^20', 'author.folded^15', 'artist^15'],
+                  'fields' => ['title^20', 'author^15', 'artist^15'],
                   'default_operator' => 'and'
                 ]
               ]
@@ -267,10 +254,9 @@ function arborelastic_search($path_id, $query, $args = []) {
         ];
       } else {
         $es_query['function_score']['query']['bool']['filter'] = [
-            'term' => [
-              'reading_level.aaps' => $args['reading_level']
-            ]
-
+          'term' => [
+            'reading_level.aaps' => $args['reading_level']
+          ]
         ];
       }
     }
@@ -303,15 +289,13 @@ function arborelastic_search($path_id, $query, $args = []) {
       ]
     ]
   ];
-
   if (isset($sort)) {
     $params['body']['sort'] = $sort;
   }
 
   try {
     $result = $es_client->search($params);
-  }
-  catch (\Exception $e) {
+  } catch (\Exception $e) {
     $result = [
       'error' => 'Elasticsearch Query Failed',
       'message' => $e->getMessage(),
@@ -320,11 +304,11 @@ function arborelastic_search($path_id, $query, $args = []) {
 
   $result['cur_page'] = $from;
   $result['size'] = $size;
-
   return $result;
 }
 
-function arborelastic_theme($existing, $type, $theme, $path) {
+function arborelastic_theme($existing, $theme, $path)
+{
   return [
     'search_results' => [
       'variables' => [
