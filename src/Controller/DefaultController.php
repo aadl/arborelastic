@@ -1,4 +1,6 @@
-<?php /**
+<?php
+
+/**
  * @file
  * Contains \Drupal\arborcat\Controller\DefaultController.
  */
@@ -10,9 +12,11 @@ use Drupal\Core\Controller\ControllerBase;
 /**
  * Default controller for the weed module.
  */
-class DefaultController extends ControllerBase {
+class DefaultController extends ControllerBase
+{
 
-  public function index($path_id, $query) {
+  public function index($path_id, $query)
+  {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($user) {
       $api_key = $user->get('field_api_key')->value;
@@ -21,7 +25,6 @@ class DefaultController extends ControllerBase {
       $api_key = false;
       $lists = false;
     }
-
     $response = arborelastic_search($path_id, $query, $_GET);
     $gridview = (isset($_GET['gridview']) && $_GET['gridview'] == 'true' ? true : false);
 
@@ -32,15 +35,14 @@ class DefaultController extends ControllerBase {
     $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
     $mat_names = json_decode($mat_types);
     $response['mat_names'] = $mat_names;
-
     $block_manager = \Drupal::service('plugin.manager.block');
     $facets = $block_manager->createInstance('catalog_facets_block', ['type' => $path_id])->build();
-
     // build the pager
     $pager_manager = \Drupal::service('pager.manager');
     $page = \Drupal::service('pager.parameters')->findPage();
     $size = (isset($_GET['size']) ? $_GET['size'] : 25);
-    $pager =\Drupal::service('pager.manager')->createPager($response['hits']['total'], $size);
+
+    $pager = \Drupal::service('pager.manager')->createPager($response['hits']['total']['value'], $size);
 
     return [
       [
@@ -52,7 +54,7 @@ class DefaultController extends ControllerBase {
         '#results' => $response,
         '#facets' => $facets,
         '#gridview' => $gridview,
-        '#cache' => [ 'max-age' => 0 ],
+        '#cache' => ['max-age' => 0],
         '#pager' => [
           '#type' => 'pager',
           '#quantity' => 5
@@ -60,5 +62,4 @@ class DefaultController extends ControllerBase {
       ]
     ];
   }
-
 }
