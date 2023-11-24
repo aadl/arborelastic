@@ -52,8 +52,8 @@ $facets['catalog'] = [
   ],
   'Fiction & Nonfiction' => [
     'name' => 'nonfiction',
-    0 => 'Fiction',
-    1 => 'Nonfiction'
+    'false' => 'Fiction',
+    'true' => 'Nonfiction'
   ],
   'Audience' => [
     'name' => 'ages',
