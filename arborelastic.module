@@ -35,6 +35,9 @@ function arborelastic_search($path_id, $query, $args = [])
     'title'
   ];
 
+  // bandaid for website/communitymultimatch without _all bucket.
+  $flatQuery = $query;
+
   // ignore colons unless part of a field query
   $is_search_field = array_filter($search_fields, function ($k) use ($query) {
     if (strpos($query, $k . ':') !== false) return true;
@@ -129,14 +132,27 @@ function arborelastic_search($path_id, $query, $args = [])
     }
   }
   if ($path_id == 'community') {
+    //layered shoulds allow for use of boolean terms and operators while benefiting from multimatch. May want to reconsider query_string layering within a function in the future.
     $es_query = [
       'bool' => [
-        'must' => [
+        'should' => [
           [
             'multi_match' => [
-              'query' => $query,
+              'query' => $flatQuery,
               'fields' => ['*'],
             ]
+          ],
+          [
+            "query_string" => [
+              "query" => $query,
+              "fields" => [
+                "title"
+              ],
+              "default_operator" => "and",
+              "fuzzy_prefix_length" => 3,
+              "fuzziness" => 1
+            ]
+
           ]
         ],
         'filter' => [
@@ -145,7 +161,8 @@ function arborelastic_search($path_id, $query, $args = [])
               'mat_code' => ['photo', 'issue', 'doc', 'article', 'media', 'advertisements']
             ]
           ]
-        ]
+        ],
+        "minimum_should_match" => 1,
       ]
     ];
     if ($args['oldnews_date']) {
@@ -164,12 +181,24 @@ function arborelastic_search($path_id, $query, $args = [])
   } elseif ($path_id == 'website') {
     $es_query = [
       'bool' => [
-        'must' => [
+        'should' => [
           [
             'multi_match' => [
-              'query' => $query,
+              'query' => $flatQuery,
               'fields' => ['*'],
             ]
+          ],
+          [
+            "query_string" => [
+              "query" => $query,
+              "fields" => [
+                "title"
+              ],
+              "default_operator" => "and",
+              "fuzzy_prefix_length" => 3,
+              "fuzziness" => 1
+            ]
+
           ]
         ],
         'must_not' => [
@@ -188,7 +217,8 @@ function arborelastic_search($path_id, $query, $args = [])
               'mat_code' => ['page', 'story', 'pub_event', 'media']
             ]
           ]
-        ]
+        ],
+        "minimum_should_match" => 1,
       ]
     ];
     if ($args['past_events']) {
