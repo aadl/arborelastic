@@ -142,18 +142,6 @@ function arborelastic_search($path_id, $query, $args = [])
               'fields' => ['*'],
             ]
           ],
-          [
-            "query_string" => [
-              "query" => $query,
-              "fields" => [
-                "title"
-              ],
-              "default_operator" => "and",
-              "fuzzy_prefix_length" => 3,
-              "fuzziness" => 1
-            ]
-
-          ]
         ],
         'filter' => [
           [
@@ -162,7 +150,6 @@ function arborelastic_search($path_id, $query, $args = [])
             ]
           ]
         ],
-        "minimum_should_match" => 1,
       ]
     ];
     if ($args['oldnews_date']) {
@@ -178,6 +165,33 @@ function arborelastic_search($path_id, $query, $args = [])
       ];
       $sort = ['oldnews_date' => ['order' => 'asc']];
     }
+    if (isset($args['mat_code'])) {
+      $es_query['bool']['must'][] =
+        [
+          "query_string" => [
+            "query" => $query,
+            "fields" => [
+              "*",
+            ],
+            "default_operator" => "and",
+            "fuzzy_prefix_length" => 3,
+            "fuzziness" => 1
+          ]
+        ];
+    } else {
+      $es_query['bool']['should'][] =
+        [
+          "query_string" => [
+            "query" => $query,
+            "fields" => [
+              "title",
+            ],
+            "default_operator" => "and",
+            "fuzzy_prefix_length" => 3,
+            "fuzziness" => 1
+          ]
+        ];
+    }
   } elseif ($path_id == 'website') {
     $es_query = [
       'bool' => [
@@ -187,18 +201,6 @@ function arborelastic_search($path_id, $query, $args = [])
               'query' => $flatQuery,
               'fields' => ['*'],
             ]
-          ],
-          [
-            "query_string" => [
-              "query" => $query,
-              "fields" => [
-                "title"
-              ],
-              "default_operator" => "and",
-              "fuzzy_prefix_length" => 3,
-              "fuzziness" => 1
-            ]
-
           ]
         ],
         'must_not' => [
@@ -218,16 +220,41 @@ function arborelastic_search($path_id, $query, $args = [])
             ]
           ]
         ],
-        "minimum_should_match" => 1,
       ]
     ];
     if ($args['past_events']) {
       unset($es_query['bool']['must_not']);
     }
     if (isset($args['mat_code'])) {
+      $es_query['bool']['must'][] =
+        [
+          "query_string" => [
+            "query" => $query,
+            "fields" => [
+              "*",
+            ],
+            "default_operator" => "and",
+            "fuzzy_prefix_length" => 3,
+            "fuzziness" => 1
+          ]
+
+        ];
       if ($args['mat_code'] == 'pub_event') {
         $sort = ['field_event_start' => ['order' => 'asc']];
       }
+    } else {
+      $es_query['bool']['should'][] =
+        [
+          "query_string" => [
+            "query" => $query,
+            "fields" => [
+              "title",
+            ],
+            "default_operator" => "and",
+            "fuzzy_prefix_length" => 3,
+            "fuzziness" => 1
+          ]
+        ];
     }
   } else {
     $es_query = [
