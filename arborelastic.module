@@ -266,7 +266,7 @@ function arborelastic_search($path_id, $query, $args = [])
               [
                 'query_string' => [
                   'query' => $query,
-                  'fields' => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author'],
+                  'fields' => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title'],
                   'default_operator' => 'and',
                   'fuzziness' => '1',
                   'fuzzy_prefix_length' => 3,
