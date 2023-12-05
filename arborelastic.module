@@ -34,10 +34,6 @@ function arborelastic_search($path_id, $query, $args = [])
     'subjects',
     'title'
   ];
-
-  // bandaid for website/communitymultimatch without _all bucket.
-  $flatQuery = $query;
-
   // ignore colons unless part of a field query
   $is_search_field = array_filter($search_fields, function ($k) use ($query) {
     if (strpos($query, $k . ':') !== false) return true;
@@ -137,9 +133,12 @@ function arborelastic_search($path_id, $query, $args = [])
       'bool' => [
         'should' => [
           [
-            'multi_match' => [
-              'query' => $flatQuery,
+            'query_string' => [
+              'query' => $query,
               'fields' => ['*'],
+              "default_operator" => "and",
+              "fuzzy_prefix_length" => 3,
+              "fuzziness" => 1
             ]
           ],
         ],
@@ -197,11 +196,14 @@ function arborelastic_search($path_id, $query, $args = [])
       'bool' => [
         'should' => [
           [
-            'multi_match' => [
-              'query' => $flatQuery,
+            'query_string' => [
+              'query' => $query,
               'fields' => ['*'],
+              "default_operator" => "and",
+              "fuzzy_prefix_length" => 3,
+              "fuzziness" => 1
             ]
-          ]
+          ],
         ],
         'must_not' => [
           [
