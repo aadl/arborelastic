@@ -131,16 +131,16 @@ function arborelastic_search($path_id, $query, $args = [])
     //layered shoulds allow for use of boolean terms and operators while benefiting from multimatch. May want to reconsider query_string layering within a function in the future.
     $es_query = [
       'bool' => [
-        'should' => [
-          [
-            'query_string' => [
-              'query' => $query,
-              'fields' => ['*'],
-              "default_operator" => "and",
-              "fuzzy_prefix_length" => 3,
-              "fuzziness" => 1
-            ]
-          ],
+        'must' => [
+          "query_string" => [
+            "query" => $query,
+            "fields" => [
+              "*",
+            ],
+            "default_operator" => "and",
+            "fuzzy_prefix_length" => 3,
+            "fuzziness" => 1
+          ]
         ],
         'filter' => [
           [
@@ -164,9 +164,10 @@ function arborelastic_search($path_id, $query, $args = [])
       ];
       $sort = ['oldnews_date' => ['order' => 'asc']];
     }
-    if (isset($args['mat_code'])) {
-      $es_query['bool']['must'][] =
-        [
+  } elseif ($path_id == 'website') {
+    $es_query = [
+      'bool' => [
+        'must' => [
           "query_string" => [
             "query" => $query,
             "fields" => [
@@ -176,34 +177,6 @@ function arborelastic_search($path_id, $query, $args = [])
             "fuzzy_prefix_length" => 3,
             "fuzziness" => 1
           ]
-        ];
-    } else {
-      $es_query['bool']['should'][] =
-        [
-          "query_string" => [
-            "query" => $query,
-            "fields" => [
-              "title",
-            ],
-            "default_operator" => "and",
-            "fuzzy_prefix_length" => 3,
-            "fuzziness" => 1
-          ]
-        ];
-    }
-  } elseif ($path_id == 'website') {
-    $es_query = [
-      'bool' => [
-        'should' => [
-          [
-            'query_string' => [
-              'query' => $query,
-              'fields' => ['*'],
-              "default_operator" => "and",
-              "fuzzy_prefix_length" => 3,
-              "fuzziness" => 1
-            ]
-          ],
         ],
         'must_not' => [
           [
@@ -228,35 +201,9 @@ function arborelastic_search($path_id, $query, $args = [])
       unset($es_query['bool']['must_not']);
     }
     if (isset($args['mat_code'])) {
-      $es_query['bool']['must'][] =
-        [
-          "query_string" => [
-            "query" => $query,
-            "fields" => [
-              "*",
-            ],
-            "default_operator" => "and",
-            "fuzzy_prefix_length" => 3,
-            "fuzziness" => 1
-          ]
-
-        ];
       if ($args['mat_code'] == 'pub_event') {
         $sort = ['field_event_start' => ['order' => 'asc']];
       }
-    } else {
-      $es_query['bool']['should'][] =
-        [
-          "query_string" => [
-            "query" => $query,
-            "fields" => [
-              "title",
-            ],
-            "default_operator" => "and",
-            "fuzzy_prefix_length" => 3,
-            "fuzziness" => 1
-          ]
-        ];
     }
   } else {
     $es_query = [
