@@ -88,7 +88,16 @@ function arborelastic_search($path_id, $query, $args = [])
       $sort_field = $sort_parts[0];
 
       // Check if keyword mapping exists for field
-      $mapping = $es_client->indices()->getFieldMapping(['index' => $index, 'fields' => $sort_field]);
+      try {
+        $mapping = $es_client->indices()->getFieldMapping(['index' => $index, 'fields' => $sort_field]);
+      } catch (\Exception $e) {
+        $result = [
+          'error' => 'Elasticsearch getFieldMapping Failed',
+          'message' => $e->getMessage(),
+        ];
+        return $result;
+      }
+
       $field_mapping = array_shift($mapping[$index]['mappings']);
       if (isset($field_mapping['mapping'][$sort_field]['fields']['keyword'])) {
         $sort_field .= '.keyword';
