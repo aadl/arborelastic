@@ -45,6 +45,8 @@ function arborelastic_search($path_id, $query, $args = [])
     $search_escapes = [',', '-'];
     $search_replace = ['', ' '];
     $query = str_replace($search_escapes, $search_replace, $query);
+    // store raw query so we don't have to str_replace fuzziness later
+    $flatQuery = $query;
     $fuzzy = explode(' ', $query);
     $query = [];
     foreach ($fuzzy as $fuz) {
@@ -222,12 +224,32 @@ function arborelastic_search($path_id, $query, $args = [])
             // the extra layer of array brackets is so we can add more to the must/should conditions
             'must' => [
               [
-                'query_string' => [
-                  'query' => $query,
-                  'fields' => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title'],
-                  'default_operator' => 'and',
-                  'fuzziness' => '1',
-                  'fuzzy_prefix_length' => 3,
+                'bool' => [
+                  'should' => [
+                    [
+                      'query_string' => [
+                        'query' => $query,
+                        'fields' => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title'],
+                        'default_operator' => 'and',
+                        'fuzziness' => '1',
+                        'fuzzy_prefix_length' => 3,
+                      ]
+                    ],
+                    [
+                      'match' => [
+                        'title' => [
+                          'query' => $flatQuery,
+                          'minimum_should_match' => '70%'
+                        ]
+                      ]
+                    ]
+                  ],
+                ]
+              ],
+              // this is partially redundant given that we are adding active to the first query string query above. can be removed later with a more comprehensive rework.
+              [
+                'match' => [
+                  'active' => 1
                 ]
               ]
             ],
