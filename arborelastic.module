@@ -70,12 +70,6 @@ function arborelastic_search($path_id, $query, $args = [])
   $es_client = ClientBuilder::create()->setHosts($hosts)->build();
   $size = 25; // default number of results to return
   $from = 0;
-
-  // Limit search results to active
-  if ($index == 'bibs') {
-    $args['active'] = $_GET['active'] ?? 1;
-  }
-
   // Parse Args and add to query string
   foreach ($args as $field => $value) {
     if ($field == 'fbclid') {
@@ -246,12 +240,6 @@ function arborelastic_search($path_id, $query, $args = [])
                   ],
                 ]
               ],
-              // this is partially redundant given that we are adding active to the first query string query above. can be removed later with a more comprehensive rework.
-              [
-                'match' => [
-                  'active' => 1
-                ]
-              ]
             ],
             'should' => [
               [
@@ -305,6 +293,14 @@ function arborelastic_search($path_id, $query, $args = [])
         ]
       ];
     }
+  }
+  // this replaces the AND active on the top-level query string to work with sidebar filters
+  if (!isset($_GET['active'])) {
+    $es_query['function_score']['query']['bool']['must'][] = [
+      'match' => [
+        'active' => 1
+      ]
+    ];
   }
 
   $params = [
