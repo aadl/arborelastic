@@ -45,6 +45,8 @@ function arborelastic_search($path_id, $query, $args = [])
     $search_escapes = [',', '-'];
     $search_replace = ['', ' '];
     $query = str_replace($search_escapes, $search_replace, $query);
+    // store raw query so we don't have to str_replace fuzziness later
+    $flatQuery = $query;
     $fuzzy = explode(' ', $query);
     $query = [];
     foreach ($fuzzy as $fuz) {
@@ -68,12 +70,6 @@ function arborelastic_search($path_id, $query, $args = [])
   $es_client = ClientBuilder::create()->setHosts($hosts)->build();
   $size = 25; // default number of results to return
   $from = 0;
-
-  // Limit search results to active
-  if ($index == 'bibs') {
-    $args['active'] = $_GET['active'] ?? 1;
-  }
-
   // Parse Args and add to query string
   foreach ($args as $field => $value) {
     if ($field == 'fbclid') {
@@ -222,14 +218,28 @@ function arborelastic_search($path_id, $query, $args = [])
             // the extra layer of array brackets is so we can add more to the must/should conditions
             'must' => [
               [
-                'query_string' => [
-                  'query' => $query,
-                  'fields' => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title'],
-                  'default_operator' => 'and',
-                  'fuzziness' => '1',
-                  'fuzzy_prefix_length' => 3,
+                'bool' => [
+                  'should' => [
+                    [
+                      'query_string' => [
+                        'query' => $query,
+                        'fields' => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title'],
+                        'default_operator' => 'and',
+                        'fuzziness' => '1',
+                        'fuzzy_prefix_length' => 3,
+                      ]
+                    ],
+                    [
+                      'match' => [
+                        'title' => [
+                          'query' => $flatQuery,
+                          'minimum_should_match' => '70%'
+                        ]
+                      ]
+                    ]
+                  ],
                 ]
-              ]
+              ],
             ],
             'should' => [
               [
@@ -283,6 +293,14 @@ function arborelastic_search($path_id, $query, $args = [])
         ]
       ];
     }
+  }
+  // this replaces the AND active on the top-level query string to work with sidebar filters
+  if (!isset($_GET['active'])) {
+    $es_query['function_score']['query']['bool']['must'][] = [
+      'match' => [
+        'active' => 1
+      ]
+    ];
   }
 
   $params = [
