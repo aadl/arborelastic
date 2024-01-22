@@ -39,14 +39,14 @@ function arborelastic_search($path_id, $query, $args = [])
     if (strpos($query, $k . ':') !== false) return true;
   });
   if (!count($is_search_field)) $query = str_replace(':', '', $query);
-
+  // store raw query so we don't have to str_replace fuzziness later
+  $flatQuery = $query;
+  $matchFields = [];
   if (strpos($query, '"') === false) {
     // escape these characters unless phrase search
     $search_escapes = [',', '-'];
     $search_replace = ['', ' '];
     $query = str_replace($search_escapes, $search_replace, $query);
-    // store raw query so we don't have to str_replace fuzziness later
-    $flatQuery = $query;
     $fuzzy = explode(' ', $query);
     $query = [];
     foreach ($fuzzy as $fuz) {
@@ -115,7 +115,8 @@ function arborelastic_search($path_id, $query, $args = [])
         'pk_campaign',
         'pk_kwd',
         'mtm_campaign',
-        'mtm_kwd'
+        'mtm_kwd',
+        'active'
       ];
       if ($field == 'author') {
         $query .= ' AND ' . $field . '.folded:(' . $value . ')';
@@ -127,8 +128,14 @@ function arborelastic_search($path_id, $query, $args = [])
         }
         $fuzzy_val = implode(' ', $fuzzy_val);
         $query .= ' AND ' . $field . '.folded:(' . $fuzzy_val . ')';
-      } elseif (!in_array($field, $field_exceptions)) {
+      } elseif (!in_array($field, $field_exceptions) && in_array($field, $search_fields)) {
         $query .= ' AND ' . $field . ':(' . str_replace(',', ' OR ', $value) . ')';
+      } elseif (!in_array($field, $field_exceptions) && !in_array($field, $search_fields)) {
+        array_push($matchFields, [
+          'match' => [
+            $field => $value
+          ]
+        ]);
       }
     }
   }
@@ -294,15 +301,18 @@ function arborelastic_search($path_id, $query, $args = [])
       ];
     }
   }
-  // this replaces the AND active on the top-level query string to work with sidebar filters
   if (!isset($_GET['active'])) {
-    $es_query['function_score']['query']['bool']['must'][] = [
+    array_push($matchFields, [
       'match' => [
         'active' => 1
       ]
-    ];
+    ]);
   }
-
+  if (count($matchFields) > 0) {
+    foreach ($matchFields as $m) {
+      $es_query['function_score']['query']['bool']['must'][] = $m;
+    }
+  }
   $params = [
     'index' => $index,
     'from' => $from * $size,
