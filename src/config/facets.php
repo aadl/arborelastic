@@ -44,10 +44,12 @@ $facets['catalog'] = [
       'h' => 'LP Record',
       'z' => 'Music Download',
     ],
-    'Tools' => [
+    'Tools & Unusual Stuff' => [
       'subsection' => true,
       'r' => 'Tools',
-      'p' => 'Art Print'
+      'p' => 'Art Print',
+      'd' => 'Board Games',
+      'q' => 'Puzzles'
     ]
   ],
   'Fiction & Nonfiction' => [
