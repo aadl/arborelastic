@@ -48,7 +48,7 @@ $facets['catalog'] = [
       'subsection' => true,
       'r' => 'Tools',
       'p' => 'Art Print',
-      'd' => 'Board Games',
+      //'d' => 'Board Games',
       'q' => 'Puzzles'
     ]
   ],
