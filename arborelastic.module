@@ -14,7 +14,6 @@ function arborelastic_help($path, $arg)
       $output = '<p>' .  t("Custom search with Elasticsearch") . '</p>';
       break;
   }
-
   return $output;
 }
 function arborelastic_search($path_id, $query, $args = [])
@@ -201,6 +200,16 @@ function applyQueryTerms($query, $es_query, $path_id)
           "fuzziness" => 1
         ]
       ];
+  } else if (count($queryables) === 0 && $query === '*') {
+    $es_query['body']['query']['function_score']['query']['bool']['must'][] =
+      [
+        'query_string' => [
+          "query" => $query,
+          "default_operator" => "and",
+          "fuzzy_prefix_length" => 3,
+          "fuzziness" => 1
+        ]
+      ];
   } else if (count($queryables) > 0) {
     // set query_string using the terms set above if there are any
     $queryString = '';
@@ -266,7 +275,7 @@ function applyMatchTerms($es_query, $path_id)
     ],
     'community' => [
       'old_news_taxonomy' => ['type' => 'terms'],
-      'mat_code' => ['type' => 'terms'],
+      'mat_code' => ['type' => 'terms', 'keyword' => true],
       'oldnews_date' => [
         'type' => 'range',
       ],
@@ -276,7 +285,7 @@ function applyMatchTerms($es_query, $path_id)
     ],
     'website' => [
       'past_events' => ['type' => 'term'],
-      'mat_code' => ['type' => 'terms'],
+      'mat_code' => ['type' => 'terms', 'keyword' => true],
       'location_name' => ['type' => 'term'],
       'event_ages' => ['type' => 'term'],
       'event_categories' => ['type' => 'term'],
@@ -286,7 +295,7 @@ function applyMatchTerms($es_query, $path_id)
     if (!array_key_exists($k, $matchables[$path_id])) {
       continue;
     }
-    $es_query['body']['query']['function_score']['query']['bool']['must'][] = scaffoldQuery($matchables[$path_id][$k]['type'], $k, $v);
+    $es_query['body']['query']['function_score']['query']['bool']['must'][] = scaffoldQuery($matchables[$path_id][$k], $k, $v);
   }
   return $es_query;
 }
@@ -329,9 +338,9 @@ function applySort($es_query, $value, $es_client, $index)
   ];
   return $es_query;
 }
-function scaffoldQuery($type, $key, $value)
+function scaffoldQuery($queryable, $key, $value)
 {
-  switch ($type) {
+  switch ($queryable['type']) {
     case 'range':
       $dates = explode(',', $value);
       return [
@@ -353,7 +362,7 @@ function scaffoldQuery($type, $key, $value)
     case 'term':
       return [
         'term' => [
-          $key . '.keyword' => [
+          $key . (isset($queryable['keyword']) ? '' : '.keyword') => [
             'value' => $value
           ]
         ]
@@ -362,7 +371,7 @@ function scaffoldQuery($type, $key, $value)
     case 'terms':
       return [
         'terms' => [
-          $key . '.keyword' => explode(',', $value)
+          $key . (isset($queryable['keyword']) ? '' : '.keyword')  => explode(',', $value)
         ]
       ];
       break;
