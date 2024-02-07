@@ -116,6 +116,7 @@ class ArborElasticSearch
     $this->applyQueryTerms();
     $this->applyMatchTerms();
     $this->applySortTerms();
+    // print(json_encode($this->es_query['body']));
     try {
       $result = $this->connection->search($this->es_query);
     } catch (\Exception $e) {
@@ -353,15 +354,23 @@ class ArborElasticSearch
       'field_event_start',
       'oldnews_date'
     ];
-    if (isset($_GET['sort'])) {
-      $sort_parts = explode('~', $_GET['sort']);
+    if (isset($this->args['sort'])) {
+      $sort_parts = explode('~', $this->args['sort']);
       $sort_field = $sort_parts[0];
-      $this->es_query['body']['sort'] = [
-        $sort_field . (in_array($sort_field, $nonKeyword) ? '' : '.keyword') => [
-          'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc') // Default sort decending
-        ]
-      ];
-    } elseif (isset($_GET['mat_code']) && isset($defaults[$this->path_id][$_GET['mat_code']])) {
+      if (!in_array($sort_field, $nonKeyword)) {
+        $this->es_query['body']['sort'] = [
+          $sort_field . '.keyword' => [
+            'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc') // Default sort decending
+          ]
+        ];
+      } else {
+        $this->es_query['body']['sort'] = [
+          $sort_field => [
+            'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc')
+          ]
+        ];
+      }
+    } elseif (isset($this->args['mat_code']) && isset($defaults[$this->path_id][$this->args['mat_code']])) {
       $this->es_query['body']['sort'] =  $defaults[$this->path_id][$_GET['mat_code']];
     }
     return $this->es_query;
