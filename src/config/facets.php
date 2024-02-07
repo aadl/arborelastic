@@ -109,7 +109,7 @@ $facets['website'] = [
     'media' => 'Media'
   ],
   'Past Events' => [
-    'name' => 'past_events',
+    'name' => 'field_event_end',
     'true' => 'Include Past Events'
   ],
   'Event Location' => [

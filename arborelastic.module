@@ -81,15 +81,7 @@ function arborelastic_search($path_id, $query, $args = [])
         'query' => [
           'function_score' => [
             'query' => [
-              'bool' => [
-                'filter' => [
-                  [
-                    'terms' => [
-                      'mat_code' => ['page', 'story', 'pub_event', 'media']
-                    ]
-                  ]
-                ]
-              ]
+              'bool' => []
             ]
           ]
         ],
@@ -104,15 +96,7 @@ function arborelastic_search($path_id, $query, $args = [])
         'query' => [
           'function_score' => [
             'query' => [
-              'bool' => [
-                'filter' => [
-                  [
-                    'terms' => [
-                      'mat_code' => ['photo', 'issue', 'doc', 'article', 'media', 'advertisements']
-                    ]
-                  ]
-                ],
-              ]
+              'bool' => []
             ]
           ]
         ],
@@ -122,12 +106,9 @@ function arborelastic_search($path_id, $query, $args = [])
 
   $es_query = $formats[$path_id];
   $es_query = applyFilterTerms($es_query, $path_id);
-
   $es_query = applyQueryTerms($query, $es_query, $path_id);
   $es_query = applyMatchTerms($es_query, $path_id);
-  if (isset($args['sort'])) {
-    $es_query = applySort($es_query, $args['sort'], $es_client, $index);
-  }
+  $es_query = applySort($es_query, $path_id);
   // dd(json_encode($es_query['body']));
   try {
     $result = $es_client->search($es_query);
@@ -163,10 +144,12 @@ function applyQueryTerms($query, $es_query, $path_id)
     'artist'
   ];
   $queryables = [];
+
   // match all : separated terms and iterate over the resulting key value pairs. Concatenate a query_string for as many as are supplied, checking against folded fields
   preg_match_all('/([a-z]\S*):(["\'\da-z\s].+?(?=(?:[a-z]\S*:|$)))/', $query, $matches);
   $keys = $matches[1];
   $values = $matches[2];
+
   // place terms into array to then iterate over again to check for operators. Doing this separately is less efficient but easier to handle.
   foreach ($keys as $i => $k) {
     if (in_array($k, $search_fields)) {
@@ -177,6 +160,7 @@ function applyQueryTerms($query, $es_query, $path_id)
       }
     }
   }
+
   foreach ($queryables as $i => $q) {
     if (strpos($q, ' OR)')) {
       $queryables[$i] = str_replace(' OR)', ')', $q) . ' OR ';
@@ -265,6 +249,7 @@ function applyQueryTerms($query, $es_query, $path_id)
 function applyMatchTerms($es_query, $path_id)
 {
   $args = $_GET;
+
   $matchables = [
     'catalog' => [
       'available_branches' => ['type' => 'term'],
@@ -284,7 +269,6 @@ function applyMatchTerms($es_query, $path_id)
       ]
     ],
     'website' => [
-      'past_events' => ['type' => 'term'],
       'mat_code' => ['type' => 'terms', 'keyword' => true],
       'location_name' => ['type' => 'term'],
       'event_ages' => ['type' => 'term'],
@@ -301,41 +285,81 @@ function applyMatchTerms($es_query, $path_id)
 }
 function applyFilterTerms($es_query, $path_id)
 {
-  if ($path_id === 'catalog') {
-    if (!isset($_GET['active'])) {
-      $es_query['body']['query']['function_score']['query']['bool']['filter'][] = [
-        'term' => ['active' => 1]
-      ];
+  $defaults = [
+    'catalog' => [
+      'active' => [
+        'type' => 'match',
+        'value' => 1
+      ]
+    ],
+    'website' => [
+      'field_event_end' => [
+        'type' => 'nested',
+        'value' => [
+          'bool' => [
+            'must_not' => [
+              'range' => [
+                'field_event_end' => [
+                  'lte' => 'now',
+                  'format' => 'date_hour_minute_second'
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      'mat_code' => [
+        'type' => 'terms',
+        'value' => ['page', 'story', 'pub_event', 'media']
+      ]
+    ],
+    'community' => [
+      'mat_code' => [
+        'type' => 'terms',
+        'value' => ['photo', 'issue', 'doc', 'article', 'media', 'advertisements']
+      ]
+    ]
+  ];
+  foreach ($defaults[$path_id] as $k => $d) {
+    if (isset($_GET[$k])) {
+      continue;
+    } else {
+      $es_query['body']['query']['function_score']['query']['bool']['filter'][] = ($d['type'] === 'nested' ? $d['value'] : [
+        $d['type'] => [
+          $k => $d['value']
+        ]
+      ]);
     }
   }
   return $es_query;
 }
-function applySort($es_query, $value, $es_client, $index)
+function applySort($es_query, $path_id)
 {
-  $sort_parts = explode('~', $value);
-  $sort_field = $sort_parts[0];
-
-  // Check if keyword mapping exists for field
-  try {
-    $mapping = $es_client->indices()->getFieldMapping(['index' => $index, 'fields' => $sort_field]);
-  } catch (\Exception $e) {
-    $result = [
-      'error' => 'Elasticsearch getFieldMapping Failed',
-      'message' => $e->getMessage(),
-    ];
-    return $result;
-  }
-
-  $field_mapping = array_shift($mapping[$index]['mappings']);
-  if (isset($field_mapping['mapping'][$sort_field]['fields']['keyword'])) {
-    $sort_field .= '.keyword';
-  }
-
-  $es_query['body']['sort'] = [
-    $sort_field => [
-      'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc') // Default sort decending
-    ]
+  $defaults = [
+    'catalog' => [],
+    'website' => [
+      'pub_event' => [
+        'field_event_start' => [
+          'order' => 'asc'
+        ]
+      ],
+    ],
+    'community' => []
   ];
+
+  if (isset($_GET['sort'])) {
+    $sort_parts = explode('~', $_GET['sort']);
+    $sort_field = $sort_parts[0];
+
+    // may need to enforce .keyword or do check logic like before
+    $es_query['body']['sort'] = [
+      $sort_field . '.keyword' => [
+        'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc') // Default sort decending
+      ]
+    ];
+  } elseif (isset($_GET['mat_code']) && isset($defaults[$path_id][$_GET['mat_code']])) {
+    $es_query['body']['sort'] =  $defaults[$path_id][$_GET['mat_code']];
+  }
   return $es_query;
 }
 function scaffoldQuery($queryable, $key, $value)
