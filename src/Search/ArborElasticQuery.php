@@ -245,7 +245,7 @@ class ArborElasticQuery
 				'mat_code' => ['type' => 'terms'],
 				'lang' => ['type' => 'term'],
 				'nonfiction' => ['type' => 'term'],
-				'ages' => ['type' => 'term'],
+				'ages' => ['type' => 'terms'],
 			],
 			'community' => [
 				'old_news_taxonomy' => ['type' => 'terms'],
@@ -260,8 +260,8 @@ class ArborElasticQuery
 			'website' => [
 				'mat_code' => ['type' => 'terms', 'keyword' => true],
 				'location_name' => ['type' => 'term'],
-				'event_ages' => ['type' => 'term'],
-				'event_categories' => ['type' => 'term'],
+				'event_ages' => ['type' => 'terms'],
+				'event_categories' => ['type' => 'terms'],
 			]
 		];
 		foreach ($this->args as $k => $v) {
