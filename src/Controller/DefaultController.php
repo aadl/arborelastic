@@ -7,8 +7,8 @@
 
 namespace Drupal\arborelastic\Controller;
 
+use Drupal\arborelastic\Search\ArborElasticQuery;
 use Drupal\Core\Controller\ControllerBase;
-use ArborElasticSearch;
 
 /**
  * Default controller for the weed module.
@@ -26,8 +26,10 @@ class DefaultController extends ControllerBase
       $api_key = false;
       $lists = false;
     }
-    $search = new ArborElasticSearch($path_id, $query, $_GET);
+
+    $search = new ArborElasticQuery($path_id, $query, $_GET);
     $response = $search->query();
+
 
     $gridview = (isset($_GET['gridview']) && $_GET['gridview'] == 'true' ? true : false);
 
