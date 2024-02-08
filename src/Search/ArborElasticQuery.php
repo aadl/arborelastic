@@ -160,9 +160,8 @@ class ArborElasticQuery
 				$queryables[$i] = str_replace(' AND)', ')', $q) . ' AND ';
 			}
 		}
-
 		// if there are no set terms, check for quotation search and set query_string with string escapes
-		if (count($queryables) === 0 && strpos($this->query, '"')) {
+		if (count($queryables) === 0 && preg_match('/"(.*?)"/', $this->query)) {
 			$search_escapes = [',', '-'];
 			$search_replace = ['', ' '];
 			$escaped = str_replace($search_escapes, $search_replace, $this->query);
