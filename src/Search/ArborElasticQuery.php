@@ -16,9 +16,16 @@ class ArborElasticQuery
 		$this->args = $args;
 		$this->query = $query;
 		$this->path_id = $path_id;
+		$indexes = \Drupal::config('arborelastic.settings')->get('arborelastic_indexes');
+		$indexes = explode("\n", $indexes);
+		foreach ($indexes as $i => $index) {
+			$parts = explode(':', $index);
+			$indexes[$parts[0]] = trim($parts[1]);
+			unset($indexes[$i]);
+		}
 		$formats = [
 			'catalog' => [
-				'index' => 'bibs',
+				'index' => $indexes[$path_id],
 				'from' => (isset($args['page']) ? $args['page'] : 0) * (isset($args['size']) ? $args['size'] : 25),
 				'body' => [
 					'size' => isset($args['size']) ? $args['size'] : 25,
@@ -60,7 +67,7 @@ class ArborElasticQuery
 				]
 			],
 			'website' => [
-				'index' => 'elasticsearch_index_migration_nodes',
+				'index' => $indexes[$path_id],
 				'from' => (isset($args['page']) ? $args['page'] : 0) * (isset($args['size']) ? $args['size'] : 25),
 				'body' => [
 					'size' => isset($args['size']) ? $args['size'] : 25,
@@ -75,7 +82,7 @@ class ArborElasticQuery
 				]
 			],
 			'community' => [
-				'index' => 'elasticsearch_index_migration_nodes',
+				'index' => $indexes[$path_id],
 				'from' => (isset($args['page']) ? $args['page'] : 0) * (isset($args['size']) ? $args['size'] : 25),
 				'body' => [
 					'size' => isset($args['size']) ? $args['size'] : 25,
