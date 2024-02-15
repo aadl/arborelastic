@@ -99,11 +99,15 @@ class ArborElasticQuery
     ];
     $matchables = [
       'catalog' => [
-        'available_branches' => ['type' => 'term'],
+        'available_branches' => ['type' => 'match'],
         'mat_code' => ['type' => 'terms'],
         'lang' => ['type' => 'term'],
         'nonfiction' => ['type' => 'term'],
         'ages' => ['type' => 'terms'],
+        'author' => ['type' => 'match'],
+        'title' => ['type' => 'match'],
+        'subjects' => ['type' => 'match'],
+        'callnums' => ['type' => 'match']
       ],
       'community' => [
         'old_news_taxonomy' => ['type' => 'terms'],
@@ -135,7 +139,8 @@ class ArborElasticQuery
     $this->applyQueryTerms();
     $this->applyMatchTerms();
     $this->applySortTerms();
-    // print(json_encode($this->es_query['body']));
+    $this->applyFlatBoosts();
+
     try {
       $result = $this->connection->search($this->es_query);
     } catch (\Exception $e) {
@@ -180,7 +185,11 @@ class ArborElasticQuery
     foreach ($keys as $i => $k) {
       if (in_array($k, $search_fields)) {
         if (in_array($k, $foldables)) {
-          $queryables[] = $k . '.folded:(' . trim($values[$i]) . ')';;
+          $queryables[] = $k . '.folded:(' . trim($values[$i]) . ')';
+          // enforce exact matches in searchable fields when using quotations in value
+          if (preg_match('/"(.*?)"/', $values[$i])) {
+            $this->enforceExactMatches($k, $values[$i]);
+          }
         } else {
           $queryables[] = $k . ':(' . trim($values[$i]) . ')';
         }
@@ -205,8 +214,6 @@ class ArborElasticQuery
           [
             "query" => $escaped,
             "default_operator" => "and",
-            "fuzzy_prefix_length" => 3,
-            "fuzziness" => 1
           ]
         ];
     } else if (count($queryables) === 0 && $this->query === '*') {
@@ -368,6 +375,26 @@ class ArborElasticQuery
       $this->es_query['body']['sort'] =  $defaults[$this->path_id][$_GET['mat_code']];
     }
     return $this->es_query;
+  }
+  private function enforceExactMatches($key, $value)
+  {
+    $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = [
+      'query_string' => [
+        'query' => $key . ':' . $value,
+      ]
+    ];
+  }
+  private function applyFlatBoosts()
+  {
+    // Helps boost closer exact matches over partial matches in broader queries
+    $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
+      'query_string' =>
+      [
+        "query" => $this->query,
+        "fields" => ['title', 'author', 'artist'],
+        "boost" => 20
+      ]
+    ];
   }
   private function scaffoldQuery($queryable, $key, $value)
   {
