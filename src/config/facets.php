@@ -24,7 +24,7 @@ $facets['catalog'] = [
       's' => 'Magazines',
       'om' => 'OverDrive eMagazines',
       'n' => 'Newspapers',
-      'zp' => 'Knitting Pattern Download'
+      'zp' => 'Pattern Download'
     ],
     'Audiobooks' => [
       'subsection' => true,
@@ -47,7 +47,7 @@ $facets['catalog'] = [
     'Unusual Stuff' => [
       'subsection' => true,
       'r' => 'Tools',
-      'p' => 'Art Print',
+      'p' => 'Art Prints',
       'd' => 'Board Games',
       'q' => 'Puzzles'
     ]
