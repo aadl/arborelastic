@@ -353,7 +353,11 @@ class ArborElasticQuery
       'bib_created',
       'field_event_end',
       'field_event_start',
-      'oldnews_date'
+      'oldnews_date',
+      'popular_week',
+      'popular_month',
+      'popular_year',
+      'popular_alltime'
     ];
     if (isset($this->args['sort'])) {
       $sort_parts = explode('~', $this->args['sort']);
