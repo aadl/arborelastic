@@ -97,6 +97,7 @@ class ArborElasticQuery
         ]
       ]
     ];
+    // prepend and appends are for nested fields. May want to add a dedicated method at some point to flesh these out
     $matchables = [
       'catalog' => [
         'available_branches' => ['type' => 'match'],
@@ -107,20 +108,23 @@ class ArborElasticQuery
         'author' => ['type' => 'match'],
         'title' => ['type' => 'match'],
         'subjects' => ['type' => 'match'],
-        'callnums' => ['type' => 'match']
+        'callnum' => ['type' => 'match_phrase'],
+        'callnums' => ['type' => 'match'],
+        'request_only' => ['type' => 'term', 'prepend' => 'flags', 'keyword' => false],
+        'reading_level' => ['type' => 'lexile_range', 'append' => 'lexile']
       ],
       'community' => [
         'old_news_taxonomy' => ['type' => 'terms'],
-        'mat_code' => ['type' => 'terms', 'keyword' => true],
+        'mat_code' => ['type' => 'terms', 'keyword' => false],
         'oldnews_date' => [
-          'type' => 'range',
+          'type' => 'date_range',
         ],
         'photo_indexed' => [
           'type' => 'term'
         ]
       ],
       'website' => [
-        'mat_code' => ['type' => 'terms', 'keyword' => true],
+        'mat_code' => ['type' => 'terms', 'keyword' => false],
         'location_name' => ['type' => 'term'],
         'event_ages' => ['type' => 'terms'],
         'event_categories' => ['type' => 'terms'],
@@ -140,7 +144,6 @@ class ArborElasticQuery
     $this->applyMatchTerms();
     $this->applySortTerms();
     $this->applyFlatBoosts();
-
     try {
       $result = $this->connection->search($this->es_query);
     } catch (\Exception $e) {
@@ -279,7 +282,6 @@ class ArborElasticQuery
   }
   private function applyMatchTerms()
   {
-
     foreach ($this->args as $k => $v) {
       if (!array_key_exists($k, $this->matchables)) {
         continue;
@@ -357,7 +359,8 @@ class ArborElasticQuery
       'popular_week',
       'popular_month',
       'popular_year',
-      'popular_alltime'
+      'popular_alltime',
+      '_score',
     ];
     if (isset($this->args['sort'])) {
       $sort_parts = explode('~', $this->args['sort']);
@@ -402,14 +405,33 @@ class ArborElasticQuery
   }
   private function scaffoldQuery($queryable, $key, $value)
   {
+    if (isset($queryable['prepend'])) {
+      $key = $queryable['prepend'] . '.' . $key;
+    }
+    if (isset($queryable['append'])) {
+      $key = $key . '.' . $queryable['append'];
+    }
+    //mat_code bypasses .keyword, because the subfield is not configured on the website/local history index due to how elasticsearch_connector creates the index mapping.
     switch ($queryable['type']) {
-      case 'range':
+      case 'date_range':
         $dates = explode(',', $value);
         return [
           'range' => [
             $key => [
               'gte' => $dates[0],
               'lte' => $dates[1]
+            ]
+          ]
+        ];
+        break;
+      case 'lexile_range':
+        $ceiling = 100 * ($value / 100 + 1) - 1;
+
+        return [
+          'range' => [
+            $key => [
+              'gte' => $value,
+              'lte' => $ceiling
             ]
           ]
         ];
@@ -421,10 +443,37 @@ class ArborElasticQuery
           ]
         ];
         break;
+      case 'prefix':
+        return [
+          'prefix' => [
+            $key =>  [
+              'value' => $value
+            ]
+          ]
+        ];
+        break;
+      case 'simple':
+        return [
+          'simple_query_string' => [
+            'query' => $value,
+            'fields' => [$key]
+          ]
+        ];
+        break;
+      case 'match_phrase':
+        return [
+          'match_phrase' => [
+            $key => [
+              'query' => $value,
+            ]
+
+          ]
+        ];
+        break;
       case 'term':
         return [
           'term' => [
-            $key . (isset($queryable['keyword']) ? '' : '.keyword') => [
+            $key  . (isset($queryable['keyword']) ? '' : '.keyword') => [
               'value' => $value
             ]
           ]
@@ -433,7 +482,7 @@ class ArborElasticQuery
       case 'terms':
         return [
           'terms' => [
-            $key . (isset($queryable['keyword']) ? '' : '.keyword')  => explode(',', $value)
+            $key . (isset($queryable['keyword']) ?  '' : '.keyword')  => explode(',', $value)
           ]
         ];
         break;
