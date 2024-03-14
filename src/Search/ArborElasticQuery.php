@@ -103,7 +103,7 @@ class ArborElasticQuery
         'available_branches' => ['type' => 'match'],
         'mat_code' => ['type' => 'terms'],
         'lang' => ['type' => 'term'],
-        'nonfiction' => ['type' => 'term'],
+        'nonfiction' => ['type' => 'term', 'keyword' => false],
         'ages' => ['type' => 'terms'],
         'author' => ['type' => 'match'],
         'title' => ['type' => 'match'],
@@ -144,6 +144,7 @@ class ArborElasticQuery
     $this->applyMatchTerms();
     $this->applySortTerms();
     $this->applyFlatBoosts();
+
     try {
       $result = $this->connection->search($this->es_query);
     } catch (\Exception $e) {
@@ -399,7 +400,7 @@ class ArborElasticQuery
       [
         "query" => $this->query,
         "fields" => ['title', 'author', 'artist'],
-        "boost" => 20
+        "boost" => 500
       ]
     ];
   }
