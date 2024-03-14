@@ -90,15 +90,15 @@ $facets['community'] = [
   ],
   'Old News' => [
     'name' => 'old_news_taxonomy',
-    '&quot;Old News&quot;' => 'All Old News',
-    '&quot;Agenda&quot;' => 'Agenda',
-    '&quot;Ann Arbor Argus&quot;' => 'Ann Arbor Argus',
-    '&quot;Ann Arbor Argus-Democrat&quot;' => 'Ann Arbor Argus-Democrat',
-    '&quot;Ann Arbor Courier&quot;' => 'Ann Arbor Courier',
-    '&quot;Ann Arbor News&quot;' => 'Ann Arbor News',
-    '&quot;Ann Arbor Sun&quot;' => 'Ann Arbor Sun',
-    '&quot;Michigan Argus&quot;' => 'Michigan Argus',
-    '&quot;Signal of Liberty&quot;' => 'Signal of Liberty',
+    'Old News' => 'All Old News',
+    'Agenda' => 'Agenda',
+    'Ann Arbor Argus' => 'Ann Arbor Argus',
+    'Ann Arbor Argus-Democrat' => 'Ann Arbor Argus-Democrat',
+    'Ann Arbor Courier' => 'Ann Arbor Courier',
+    'Ann Arbor News' => 'Ann Arbor News',
+    'Ann Arbor Sun' => 'Ann Arbor Sun',
+    'Michigan Argus' => 'Michigan Argus',
+    'Signal of Liberty' => 'Signal of Liberty',
   ]
 ];
 
@@ -111,7 +111,7 @@ $facets['website'] = [
     'media' => 'Media'
   ],
   'Past Events' => [
-    'name' => 'past_events',
+    'name' => 'field_event_end',
     'true' => 'Include Past Events'
   ],
   'Event Location' => [

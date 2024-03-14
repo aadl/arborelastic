@@ -7,6 +7,7 @@
 
 namespace Drupal\arborelastic\Controller;
 
+use Drupal\arborelastic\Search\ArborElasticQuery;
 use Drupal\Core\Controller\ControllerBase;
 
 /**
@@ -25,7 +26,11 @@ class DefaultController extends ControllerBase
       $api_key = false;
       $lists = false;
     }
-    $response = arborelastic_search($path_id, $query, $_GET);
+
+    $search = new ArborElasticQuery($path_id, $query, $_GET);
+    $response = $search->query();
+
+
     $gridview = (isset($_GET['gridview']) && $_GET['gridview'] == 'true' ? true : false);
 
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
