@@ -111,7 +111,8 @@ class ArborElasticQuery
         'callnum' => ['type' => 'match_phrase'],
         'callnums' => ['type' => 'match'],
         'request_only' => ['type' => 'term', 'prepend' => 'flags', 'keyword' => false],
-        'reading_level' => ['type' => 'lexile_range', 'append' => 'lexile']
+        'reading_level' => ['type' => 'lexile_range', 'append' => 'lexile'],
+        'licensed_from' => ['type' => 'match']
       ],
       'community' => [
         'old_news_taxonomy' => ['type' => 'terms'],
@@ -160,6 +161,7 @@ class ArborElasticQuery
   }
   private function applyQueryTerms()
   {
+    // Queryables in this function are inline search terms. title:* author:* etc
     $search_fields = [
       'author',
       'artist',
