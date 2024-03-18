@@ -34,6 +34,7 @@ class ArborElasticQuery
             'function_score' => [
               'query' => [
                 'bool' => [
+                  'must' => [],
                   'should' => [
                     [
                       'match' => [
@@ -145,7 +146,7 @@ class ArborElasticQuery
     $this->applyMatchTerms();
     $this->applySortTerms();
     $this->applyFlatBoosts();
-
+    dd(json_encode($this->es_query['body']));
     try {
       $result = $this->connection->search($this->es_query);
     } catch (\Exception $e) {
@@ -393,7 +394,7 @@ class ArborElasticQuery
   }
   private function enforceExactMatches($key, $value)
   {
-    $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = [
+    $this->es_query['body']['query']['function_score']['query']['bool']['must']['bool']['must'][] = [
       'query_string' => [
         'query' => $key . ':' . $value,
       ]
