@@ -146,7 +146,7 @@ class ArborElasticQuery
     $this->applyMatchTerms();
     $this->applySortTerms();
     $this->applyFlatBoosts();
-    dd(json_encode($this->es_query['body']));
+
     try {
       $result = $this->connection->search($this->es_query);
     } catch (\Exception $e) {
