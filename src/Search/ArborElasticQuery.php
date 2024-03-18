@@ -192,9 +192,14 @@ class ArborElasticQuery
       if (in_array($k, $search_fields)) {
         if (in_array($k, $foldables)) {
           $queryables[] = $k . '.folded:(' . trim($values[$i]) . ')';
-          // enforce exact matches in searchable fields when using quotations in value
-          if (preg_match('/"(.*?)"/', $values[$i])) {
-            $this->enforceExactMatches($k, $values[$i]);
+          // Authors need broader handling for overdrive. Might be better addressed with an analyzer in the future.
+          if ($k === 'author') {
+            $this->handleOverdrive($values[$i]);
+          } else {
+            // enforce exact matches in searchable fields when using quotations in value & not conflicting with overdrive
+            if (preg_match('/"(.*?)"/', $values[$i])) {
+              $this->enforceExactMatches($k, $values[$i]);
+            }
           }
         } else {
           $queryables[] = $k . ':(' . trim($values[$i]) . ')';
@@ -238,7 +243,7 @@ class ArborElasticQuery
       foreach ($queryables as $q) {
         $queryString .= $q;
       }
-      $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
+      $this->es_query['body']['query']['function_score']['query']['bool']['must']['bool']['should'][] =
         [
           'query_string' => [
             "query" => $queryString,
@@ -403,6 +408,17 @@ class ArborElasticQuery
         "query" => $this->query,
         "fields" => ['title', 'author', 'artist'],
         "boost" => 500
+      ]
+    ];
+  }
+  private function handleOverdrive($value)
+  {
+    $this->es_query['body']['query']['function_score']['query']['bool']['must']['bool']['should'][] = [
+      'match' => [
+        'author' => [
+          'query' => $value,
+          'operator' => 'and',
+        ],
       ]
     ];
   }
