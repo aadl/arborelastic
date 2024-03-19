@@ -411,6 +411,18 @@ class ArborElasticQuery
         "boost" => 500
       ]
     ];
+    // Reduces Overdrive relevance compared to AADL-owned items
+    $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
+      'bool' => [
+        'should' =>
+        [
+          "match" => [
+            "bib_type" => "Overdrive",
+          ]
+        ],
+        "boost" => 0.7
+      ]
+    ];
   }
   private function handleOverdrive($value)
   {
