@@ -186,15 +186,21 @@ class ArborElasticQuery
     preg_match_all('/([a-z]\S*):(["\'\da-z\s].+?(?=(?:[a-z]\S*:|$)))/', $this->query, $matches);
     $keys = $matches[1];
     $values = $matches[2];
-
     // place terms into array to then iterate over again to check for operators. Doing this separately is less efficient but easier to handle.
     foreach ($keys as $i => $k) {
       if (in_array($k, $search_fields)) {
         if (in_array($k, $foldables)) {
-          $queryables[] = $k . '.folded:(' . trim($values[$i]) . ')';
-          // enforce exact matches in searchable fields when using quotations in value
-          if (preg_match('/"(.*?)"/', $values[$i])) {
-            $this->enforceExactMatches($k, $values[$i]);
+
+          // Authors need broader handling for overdrive. Might be better addressed with an analyzer in the future.
+          if ($k === 'author') {
+            $this->handleOverdrive($values[$i]);
+          } else {
+
+            $queryables[] = $k . '.folded:(' . trim($values[$i]) . ')';
+            // enforce exact matches in searchable fields when using quotations in value & not conflicting with overdrive
+            if (preg_match('/"(.*?)"/', $values[$i])) {
+              $this->enforceExactMatches($k, $values[$i]);
+            }
           }
         } else {
           $queryables[] = $k . ':(' . trim($values[$i]) . ')';
@@ -210,7 +216,7 @@ class ArborElasticQuery
       }
     }
     // if there are no set terms, check for quotation search and set query_string with string escapes
-    if (count($queryables) === 0 && preg_match('/"(.*?)"/', $this->query)) {
+    if (count($queryables) === 0 && preg_match('/^"(.*?)"/', $this->query)) {
       $search_escapes = [',', '-'];
       $search_replace = ['', ' '];
       $escaped = str_replace($search_escapes, $search_replace, $this->query);
@@ -403,6 +409,14 @@ class ArborElasticQuery
         "query" => $this->query,
         "fields" => ['title', 'author', 'artist'],
         "boost" => 500
+      ]
+    ];
+  }
+  private function handleOverdrive($value)
+  {
+    $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = [
+      'match' => [
+        'author.folded' => $value,
       ]
     ];
   }
