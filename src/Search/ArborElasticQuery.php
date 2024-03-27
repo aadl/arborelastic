@@ -404,9 +404,10 @@ class ArborElasticQuery
   {
     // Helps boost closer exact matches over partial matches in broader queries
     $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
-      'query_string' =>
+      'multi_match' =>
       [
         "query" => $this->query,
+        "type" => "phrase_prefix",
         "fields" => ['title', 'author', 'artist'],
         "boost" => 500
       ]
