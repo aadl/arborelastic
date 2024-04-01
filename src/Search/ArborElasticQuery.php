@@ -49,7 +49,7 @@ class ArborElasticQuery
               'field_value_factor' => [
                 'field' => 'popular_alltime',
                 'modifier' => 'log1p',
-                'missing' => 1
+                'missing' => 0
               ]
             ]
           ],
@@ -202,7 +202,7 @@ class ArborElasticQuery
     $queryables = [];
 
     // match all : separated terms and iterate over the resulting key value pairs. Concatenate a query_string for as many as are supplied, checking against folded fields
-    preg_match_all('/([a-z]\S*):(["\'\da-z\s].+?(?=(?:[a-z]\S*:|$)))/', $this->query, $matches);
+    preg_match_all('/([a-z]\S*):(["\'\da-zA-Z\s].+?(?=(?:[a-z]\S*:|$)))/', $this->query, $matches);
     $keys = $matches[1];
     $values = $matches[2];
     // place terms into array to then iterate over again to check for operators. Doing this separately is less efficient but easier to handle.
@@ -211,6 +211,7 @@ class ArborElasticQuery
         if (in_array($k, $search_fields[$this->path_id]['foldables'])) {
           // Authors need broader handling for overdrive. Might be better addressed with an analyzer in the future.
           if ($k === 'author') {
+            $this->query = str_replace('author:', '', $this->query);
             $this->handleOverdrive($values[$i]);
           } else {
             $queryables[] = $k . '.folded:(' . trim($values[$i]) . ')';
