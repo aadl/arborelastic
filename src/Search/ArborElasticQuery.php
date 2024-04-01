@@ -163,22 +163,41 @@ class ArborElasticQuery
   {
     // Queryables in this function are inline search terms. title:* author:* etc
     $search_fields = [
-      'author',
-      'artist',
-      'bib_created',
-      'callnum',
-      'callnums',
-      'lang',
-      'pub_year',
-      'pub_info',
-      'series',
-      'subjects',
-      'title'
-    ];
-    $foldables = [
-      'title',
-      'author',
-      'artist'
+      'catalog' => [
+        'fields' => [
+          'author',
+          'artist',
+          'bib_created',
+          'callnum',
+          'callnums',
+          'lang',
+          'pub_year',
+          'pub_info',
+          'series',
+          'subjects',
+          'title',
+        ],
+        'foldables' => [
+          'title',
+          'author',
+          'artist'
+        ]
+      ],
+      'community' => [
+        'fields' => [
+          'title',
+          'photographer',
+          'authored_by',
+        ],
+        'foldables' => []
+      ],
+      'website' => [
+        'fields' => [
+          'title',
+          'location_name'
+        ],
+        'foldables' => []
+      ]
     ];
     $queryables = [];
 
@@ -188,15 +207,13 @@ class ArborElasticQuery
     $values = $matches[2];
     // place terms into array to then iterate over again to check for operators. Doing this separately is less efficient but easier to handle.
     foreach ($keys as $i => $k) {
-      if (in_array($k, $search_fields)) {
-        if (in_array($k, $foldables)) {
-
+      if (in_array($k, $search_fields[$this->path_id]['fields'])) {
+        if (in_array($k, $search_fields[$this->path_id]['foldables'])) {
           // Authors need broader handling for overdrive. Might be better addressed with an analyzer in the future.
           if ($k === 'author') {
             $this->query = str_replace('author:', '', $this->query);
             $this->handleOverdrive($values[$i]);
           } else {
-
             $queryables[] = $k . '.folded:(' . trim($values[$i]) . ')';
             // enforce exact matches in searchable fields when using quotations in value & not conflicting with overdrive
             if (preg_match('/"(.*?)"/', $values[$i])) {
