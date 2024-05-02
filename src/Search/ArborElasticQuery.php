@@ -272,13 +272,58 @@ class ArborElasticQuery
           ]
         ];
     } else {
-      // if no terms or quotation wrapped searches, use a more inclusive search approach. For catalog, queries with 2 words or less currently require all words to be present in the fields. 90% match is used for lonnger queries. Website and community have not been changed. They're large and unwieldy enough datasets that query strings still remain useful.
+      // if no terms or quotation wrapped searches, use a more inclusive search approach using nested should as an or
       $formats = [
         'catalog' => [
-          'multi_match' => [
-            "query" => $this->query,
-            "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
-            "minimum_should_match" => "2<90%"
+          'bool' => [
+            'should' => [
+              /* 
+                contain shorter searches (2 words or under).
+              */
+              [
+                'multi_match' => [
+                  "query" => $this->query,
+                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
+                  "minimum_should_match" => "2<90%"
+                ],
+              ],
+              /* 
+                Helps relevancy of multi-faceted queries (e.g. {some title} {some author}). 
+                If there are only 3 words, it requires all to match somewhere in the set. 
+                if there are more, it maxes out at 4 requiring matches among the set. 
+              */
+              [
+                'combined_fields' => [
+                  "query" => $this->query,
+                  "fields" =>  ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'suggest'],
+                  "minimum_should_match" => "3<4",
+                ]
+              ],
+              /* 
+                This sifts out extraneous titles composed of very short words and also boosts close/exact 
+                matches of short words in sequence. Also helps support multi-faceted title/author queries made
+                without specified in-line fields, which could be missed by the top multi_match, but 
+                caught by the combined_fields.
+              */
+              [
+                'multi_match' => [
+                  "query" => $this->query,
+                  "type" => "phrase_prefix",
+                  "fields" => ["title.folded^20", "addl_title", "title_medium", "series"],
+                ]
+              ],
+              // same as above but for authors
+              [
+                'multi_match' => [
+                  "query" => $this->query,
+                  "type" => "phrase_prefix",
+                  "fields" => ["author.folded^20", "addl_author"],
+                ]
+              ]
+            ],
+            /* constrain what could be bloated results from the combined_fields
+             query by requiring at least two of these four clauses */
+            "minimum_should_match" => 2
           ]
         ],
         'website' => [
