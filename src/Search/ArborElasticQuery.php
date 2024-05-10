@@ -201,11 +201,17 @@ class ArborElasticQuery
     ];
     $queryables = [];
 
-    // match all : separated terms and iterate over the resulting key value pairs. Concatenate a query_string for as many as are supplied, checking against folded fields
-    preg_match_all('/([a-z]\S*):(["\'\da-zA-Z\s].+?(?=(?:[a-z]\S*:|$)))/', $this->query, $matches);
+    // match all : separated terms and iterate over the resulting key value pairs. 
+    // Concatenate a query_string for as many as are supplied, checking against folded fields. store potential remainder for later wildcard inlining within stringable queries
+    $remainder = $this->query;
+    preg_match_all('/([a-z]\S*):((["\'\da-zA-Z\*\s].+?|[\*])(?=(?:[a-z]\S*:|\s\s|$)))/', $remainder, $matches);
     $keys = $matches[1];
     $values = $matches[2];
-    // place terms into array to then iterate over again to check for operators. Doing this separately is less efficient but easier to handle.
+    foreach ($matches as $m) {
+      $remainder = str_replace($m, '', $remainder);
+    }
+
+    // place terms into array to then iterate over again to check for operators within the specified field to support operators leading into another field.
     foreach ($keys as $i => $k) {
       if (in_array($k, $search_fields[$this->path_id]['fields'])) {
         if (in_array($k, $search_fields[$this->path_id]['foldables'])) {
@@ -265,7 +271,7 @@ class ArborElasticQuery
       $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
         [
           'query_string' => [
-            "query" => $queryString,
+            "query" => $remainder != null ? '*:' . $remainder  . $queryString  : $queryString,
             "default_operator" => "and",
             "fuzzy_prefix_length" => 3,
             "fuzziness" => 1
@@ -277,25 +283,21 @@ class ArborElasticQuery
         'catalog' => [
           'bool' => [
             'should' => [
-              /* 
-                contain shorter searches (2 words or under).
-              */
               [
                 'multi_match' => [
                   "query" => $this->query,
-                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
-                  "minimum_should_match" => "2<90%"
+                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium']
                 ],
               ],
               /* 
                 Helps relevancy of multi-faceted queries (e.g. {some title} {some author}). 
-                If there are only 3 words, it requires all to match somewhere in the set. 
+                If there are only 2 words, it requires all to match somewhere in the set. 
                 if there are more, it maxes out at 4 requiring matches among the set. 
               */
               [
                 'combined_fields' => [
                   "query" => $this->query,
-                  "fields" =>  ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'suggest'],
+                  "fields" =>  ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
                   "minimum_should_match" => "3<4",
                 ]
               ],
@@ -321,9 +323,12 @@ class ArborElasticQuery
                 ]
               ]
             ],
-            /* constrain what could be bloated results from the combined_fields
-             query by requiring at least two of these four clauses */
-            "minimum_should_match" => 2
+            /* 
+              constrain what could be bloated results from the combined_fields
+              query by requiring at least two of these four clauses.
+              In the case of the fallback query containing boolean operators, increase match number to 3 to require the above query_string 
+            */
+            "minimum_should_match" => strpos($this->query, ' AND ') || strpos($this->query, ' OR ') || strpos($this->query, '*') ? 3 : 2
           ]
         ],
         'website' => [
@@ -349,6 +354,17 @@ class ArborElasticQuery
           ]
         ]
       ];
+      // Fallback for when operators are present in a catalog query without fields specified. Won't usally be hit or required. 
+      // May want to consider reformatting this method to accomodate conditional formats rather than the current config-like setup.
+      if ($this->path_id === 'catalog' && (strpos($this->query, ' AND ') || strpos($this->query, ' OR ') || strpos($this->query, '*'))) {
+        $formats['catalog']['bool']['should'][] =  [
+          'query_string' => [
+            "query" =>   $this->query,
+            "type" => "cross_fields",
+            "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
+          ]
+        ];
+      }
       $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = $formats[$this->path_id];
     }
   }
