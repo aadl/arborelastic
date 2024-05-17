@@ -210,7 +210,10 @@ class ArborElasticQuery
     foreach ($matches as $m) {
       $remainder = str_replace($m, '', $remainder);
     }
-
+    preg_match('/(\sOR\s|\sAND\s)+$/', $remainder, $last);
+    if ($last === null) {
+      $remainder = $remainder .= ' AND ';
+    }
     // place terms into array to then iterate over again to check for operators within the specified field to support operators leading into another field.
     foreach ($keys as $i => $k) {
       if (in_array($k, $search_fields[$this->path_id]['fields'])) {
@@ -277,6 +280,14 @@ class ArborElasticQuery
             "fuzziness" => 1
           ]
         ];
+    } else if ($this->path_id === 'catalog' && (strpos($this->query, ' AND ') || strpos($this->query, ' OR ') || strpos($this->query, '*'))) {
+      $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
+        [
+          'query_string' => [
+            "query" =>   $this->query,
+            "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
+          ]
+        ];
     } else {
       // if no terms or quotation wrapped searches, use a more inclusive search approach using nested should as an or
       $formats = [
@@ -326,9 +337,8 @@ class ArborElasticQuery
             /* 
               constrain what could be bloated results from the combined_fields
               query by requiring at least two of these four clauses.
-              In the case of the fallback query containing boolean operators, increase match number to 3 to require the above query_string 
             */
-            "minimum_should_match" => strpos($this->query, ' AND ') || strpos($this->query, ' OR ') || strpos($this->query, '*') ? 3 : 2
+            "minimum_should_match" => 2
           ]
         ],
         'website' => [
