@@ -364,17 +364,6 @@ class ArborElasticQuery
           ]
         ]
       ];
-      // Fallback for when operators are present in a catalog query without fields specified. Won't usally be hit or required. 
-      // May want to consider reformatting this method to accomodate conditional formats rather than the current config-like setup.
-      if ($this->path_id === 'catalog' && (strpos($this->query, ' AND ') || strpos($this->query, ' OR ') || strpos($this->query, '*'))) {
-        $formats['catalog']['bool']['should'][] =  [
-          'query_string' => [
-            "query" =>   $this->query,
-            "type" => "cross_fields",
-            "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
-          ]
-        ];
-      }
       $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = $formats[$this->path_id];
     }
   }
