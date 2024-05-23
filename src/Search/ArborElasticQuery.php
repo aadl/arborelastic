@@ -332,6 +332,68 @@ class ArborElasticQuery
                   "type" => "phrase_prefix",
                   "fields" => ["author.folded^20", "addl_author"],
                 ]
+              ],
+              /*
+                Use a dis_max to look for fuzzier results and use the highest score. Using a mix of tri-ngrams, 
+                fuzzy matches on author/title, and the same broad combined_fields query as above. Tri-gram matches 
+                should be used ahead of fuzzy matches. And combined field matches will be used above all. This
+                maintains the ability to do cross field searches without inline fields and still receive accurate
+                results
+              */
+              [
+                'dis_max' => [
+                  'queries' => [
+                    [
+                      'match' => [
+                        'title.trigram' => [
+                          "query" => $this->query,
+                          "minimum_should_match" => "3<-25%",
+                          "boost" => 0.3
+
+                        ]
+                      ]
+                    ],
+                    [
+                      'match' => [
+                        'author.trigram' => [
+                          "query" => $this->query,
+                          "minimum_should_match" => "3<-25%",
+                          "boost" => 0.3
+                        ]
+                      ],
+                    ],
+                    [
+                      'combined_fields' => [
+                        "query" => $this->query,
+                        "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
+                        "minimum_should_match" => "3<4",
+                        "boost" => 40
+                      ]
+                    ],
+                    [
+                      'match' => [
+                        'title.folded' => [
+                          "query" =>  $this->query,
+                          "fuzziness" => 'AUTO',
+                          "prefix_length" => 3,
+                          "boost" => 0,
+                          "operator" => 'and'
+                        ]
+                      ]
+                    ],
+                    [
+                      'match' => [
+                        'author.folded' => [
+                          "query" =>  $this->query,
+                          "fuzziness" => 'AUTO',
+                          "prefix_length" => 3,
+                          "boost" => 0,
+                          "operator" => 'and'
+                        ]
+                      ]
+                    ],
+                  ],
+                ]
               ]
             ],
             /* 
