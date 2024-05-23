@@ -201,11 +201,20 @@ class ArborElasticQuery
     ];
     $queryables = [];
 
-    // match all : separated terms and iterate over the resulting key value pairs. Concatenate a query_string for as many as are supplied, checking against folded fields
-    preg_match_all('/([a-z]\S*):(["\'\da-zA-Z\s].+?(?=(?:[a-z]\S*:|$)))/', $this->query, $matches);
+    // match all : separated terms and iterate over the resulting key value pairs. 
+    // Concatenate a query_string for as many as are supplied, checking against folded fields. store potential remainder for later wildcard inlining within stringable queries
+    $remainder = $this->query;
+    preg_match_all('/([a-z]\S*):((["\'\da-zA-Z\*\s].+?|[\*])(?=(?:[a-z]\S*:|\s\s|$)))/', $remainder, $matches);
     $keys = $matches[1];
     $values = $matches[2];
-    // place terms into array to then iterate over again to check for operators. Doing this separately is less efficient but easier to handle.
+    foreach ($matches as $m) {
+      $remainder = str_replace($m, '', $remainder);
+    }
+    preg_match('/(\sOR\s|\sAND\s)+$/', $remainder, $last);
+    if ($last === null) {
+      $remainder = $remainder .= ' AND ';
+    }
+    // place terms into array to then iterate over again to check for operators within the specified field to support operators leading into another field.
     foreach ($keys as $i => $k) {
       if (in_array($k, $search_fields[$this->path_id]['fields'])) {
         if (in_array($k, $search_fields[$this->path_id]['foldables'])) {
@@ -265,10 +274,18 @@ class ArborElasticQuery
       $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
         [
           'query_string' => [
-            "query" => $queryString,
+            "query" => $remainder != null ? '*:' . $remainder  . $queryString  : $queryString,
             "default_operator" => "and",
             "fuzzy_prefix_length" => 3,
             "fuzziness" => 1
+          ]
+        ];
+    } else if ($this->path_id === 'catalog' && (strpos($this->query, ' AND ') || strpos($this->query, ' OR ') || strpos($this->query, '*'))) {
+      $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
+        [
+          'query_string' => [
+            "query" =>   $this->query,
+            "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
           ]
         ];
     } else {
@@ -277,25 +294,21 @@ class ArborElasticQuery
         'catalog' => [
           'bool' => [
             'should' => [
-              /* 
-                contain shorter searches (2 words or under).
-              */
               [
                 'multi_match' => [
                   "query" => $this->query,
-                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
-                  "minimum_should_match" => "2<90%"
+                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium']
                 ],
               ],
               /* 
                 Helps relevancy of multi-faceted queries (e.g. {some title} {some author}). 
-                If there are only 3 words, it requires all to match somewhere in the set. 
+                If there are only 2 words, it requires all to match somewhere in the set. 
                 if there are more, it maxes out at 4 requiring matches among the set. 
               */
               [
                 'combined_fields' => [
                   "query" => $this->query,
-                  "fields" =>  ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'suggest'],
+                  "fields" =>  ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
                   "minimum_should_match" => "3<4",
                 ]
               ],
@@ -319,10 +332,74 @@ class ArborElasticQuery
                   "type" => "phrase_prefix",
                   "fields" => ["author.folded^20", "addl_author"],
                 ]
+              ],
+              /*
+                Use a dis_max to look for fuzzier results and use the highest score. Using a mix of tri-ngrams, 
+                fuzzy matches on author/title, and the same broad combined_fields query as above. Tri-gram matches 
+                should be used ahead of fuzzy matches. And combined field matches will be used above all. This
+                maintains the ability to do cross field searches without inline fields and still receive accurate
+                results
+              */
+              [
+                'dis_max' => [
+                  'queries' => [
+                    [
+                      'match' => [
+                        'title.trigram' => [
+                          "query" => $this->query,
+                          "minimum_should_match" => "3<-25%",
+                          "boost" => 0.3
+
+                        ]
+                      ]
+                    ],
+                    [
+                      'match' => [
+                        'author.trigram' => [
+                          "query" => $this->query,
+                          "minimum_should_match" => "3<-25%",
+                          "boost" => 0.3
+                        ]
+                      ],
+                    ],
+                    [
+                      'combined_fields' => [
+                        "query" => $this->query,
+                        "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
+                        "minimum_should_match" => "3<4",
+                        "boost" => 40
+                      ]
+                    ],
+                    [
+                      'match' => [
+                        'title.folded' => [
+                          "query" =>  $this->query,
+                          "fuzziness" => 'AUTO',
+                          "prefix_length" => 3,
+                          "boost" => 0,
+                          "operator" => 'and'
+                        ]
+                      ]
+                    ],
+                    [
+                      'match' => [
+                        'author.folded' => [
+                          "query" =>  $this->query,
+                          "fuzziness" => 'AUTO',
+                          "prefix_length" => 3,
+                          "boost" => 0,
+                          "operator" => 'and'
+                        ]
+                      ]
+                    ],
+                  ],
+                ]
               ]
             ],
-            /* constrain what could be bloated results from the combined_fields
-             query by requiring at least two of these four clauses */
+            /* 
+              constrain what could be bloated results from the combined_fields
+              query by requiring at least two of these four clauses.
+            */
             "minimum_should_match" => 2
           ]
         ],
