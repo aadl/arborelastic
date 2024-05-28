@@ -171,6 +171,7 @@ class ArborElasticQuery
           'callnum',
           'callnums',
           'lang',
+          'material',
           'pub_year',
           'pub_info',
           'series',
@@ -285,7 +286,7 @@ class ArborElasticQuery
         [
           'query_string' => [
             "query" =>   $this->query,
-            "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'material', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
+            "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
           ]
         ];
     } else {
@@ -297,7 +298,7 @@ class ArborElasticQuery
               [
                 'multi_match' => [
                   "query" => $this->query,
-                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'material', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium']
+                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium']
                 ],
               ],
               /* 
@@ -308,7 +309,7 @@ class ArborElasticQuery
               [
                 'combined_fields' => [
                   "query" => $this->query,
-                  "fields" =>  ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series',  'material', 'addl_author', 'addl_title', 'title_medium'],
+                  "fields" =>  ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
                   "minimum_should_match" => "3<4",
                 ]
               ],
