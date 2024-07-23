@@ -166,6 +166,7 @@ class ArborElasticQuery
       'catalog' => [
         'fields' => [
           'author',
+          'addl_author',
           'artist',
           'bib_created',
           'callnum',
