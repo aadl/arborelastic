@@ -442,8 +442,8 @@ class ArborElasticQuery
               "*",
             ],
             "default_operator" => "and",
-            "fuzzy_prefix_length" => 3,
-            "fuzziness" => 1
+            "fuzzy_prefix_length" => 2,
+            "fuzziness" => "AUTO"
           ]
         ],
         'community' => [
@@ -454,8 +454,8 @@ class ArborElasticQuery
               "*",
             ],
             "default_operator" => "and",
-            "fuzzy_prefix_length" => 3,
-            "fuzziness" => 1
+            "fuzzy_prefix_length" => 2,
+            "fuzziness" => "AUTO"
           ]
         ]
       ];
