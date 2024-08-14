@@ -128,7 +128,7 @@ class ArborElasticQuery
         'mat_code' => ['type' => 'terms', 'keyword' => false],
         'location_name' => ['type' => 'term'],
         'event_ages' => ['type' => 'terms'],
-        'event_categories' => ['type' => 'terms'],
+        'event_categories' => ['type' => 'terms', 'keyword' => false],
       ]
     ];
     $this->matchables = $matchables[$path_id];
@@ -166,6 +166,7 @@ class ArborElasticQuery
       'catalog' => [
         'fields' => [
           'author',
+          'addl_author',
           'artist',
           'bib_created',
           'callnum',
