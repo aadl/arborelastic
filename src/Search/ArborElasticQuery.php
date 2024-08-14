@@ -39,7 +39,7 @@ class ArborElasticQuery
                       'match' => [
                         'lang' => [
                           'query' => 'eng',
-                          'boost' => 300
+                          'boost' => 30
                         ]
                       ]
                     ],
@@ -367,7 +367,6 @@ class ArborElasticQuery
                           "query" => $this->query,
                           "minimum_should_match" => "3<-25%",
                           "boost" => 0.3
-
                         ]
                       ]
                     ],
@@ -438,6 +437,7 @@ class ArborElasticQuery
         'website' => [
           "query_string" => [
             "query" => $this->query,
+            "type" => 'cross_fields',
             "fields" => [
               "*",
             ],
@@ -449,6 +449,7 @@ class ArborElasticQuery
         'community' => [
           "query_string" => [
             "query" => $this->query,
+            "type" => 'cross_fields',
             "fields" => [
               "*",
             ],
@@ -576,12 +577,11 @@ class ArborElasticQuery
   {
     // Helps boost closer exact matches over partial matches in broader queries
     $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
-      'multi_match' =>
+      'query_string' =>
       [
         "query" => $this->query,
-        "type" => "phrase_prefix",
         "fields" => ['title', 'author', 'artist'],
-        "boost" => 500
+        "boost" => 100
       ]
     ];
     // Reduces Overdrive relevance compared to AADL-owned items
