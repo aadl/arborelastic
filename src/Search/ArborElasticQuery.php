@@ -304,13 +304,29 @@ class ArborElasticQuery
               /* 
                 Helps relevancy of multi-faceted queries (e.g. {some title} {some author}). 
                 If there are only 2 words, it requires all to match somewhere in the set. 
-                if there are more, it maxes out at 4 requiring matches among the set. 
+                if there are more, it maxes out at 4 requiring matches among the set. Having 
+                notes duplicated within an additional clause allows the removal of many 
+                instances of common words and phrases bloating results by requiring its 
+                occurrence in notes to be literal if a portion is hit by combined_fields
               */
               [
-                'combined_fields' => [
-                  "query" => $this->query,
-                  "fields" =>  ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
-                  "minimum_should_match" => "3<4",
+                'bool' => [
+                  'must' => [
+                    [
+                      'combined_fields' => [
+                        "query" => $this->query,
+                        "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
+                        "minimum_should_match" => "3<4"
+                      ],
+                    ],
+                    [
+                      'query_string' => [
+                        "query" => $this->query,
+                        "fields" => ['notes'],
+                        "default_operator" => 'and'
+                      ],
+                    ],
+                  ],
                 ]
               ],
               /* 
@@ -339,7 +355,7 @@ class ArborElasticQuery
                 fuzzy matches on author/title, and the same broad combined_fields query as above. Tri-gram matches 
                 should be used ahead of fuzzy matches. And combined field matches will be used above all. This
                 maintains the ability to do cross field searches without inline fields and still receive accurate
-                results
+                results. The lowest fuzzy bool group includes notes to ensure low ranking of incidental occurrences 
               */
               [
                 'dis_max' => [
@@ -372,25 +388,39 @@ class ArborElasticQuery
                       ]
                     ],
                     [
-                      'match' => [
-                        'title.folded' => [
-                          "query" =>  $this->query,
-                          "fuzziness" => 'AUTO',
-                          "prefix_length" => 3,
-                          "boost" => 0,
-                          "operator" => 'and'
-                        ]
-                      ]
-                    ],
-                    [
-                      'match' => [
-                        'author.folded' => [
-                          "query" =>  $this->query,
-                          "fuzziness" => 'AUTO',
-                          "prefix_length" => 3,
-                          "boost" => 0,
-                          "operator" => 'and'
-                        ]
+                      'bool' => [
+                        'should' => [
+                          [
+                            'match' => [
+                              'title.folded' => [
+                                "query" =>  $this->query,
+                                "fuzziness" => 'AUTO',
+                                "prefix_length" => 3,
+                                "boost" => 0,
+                                "operator" => 'and'
+                              ]
+                            ]
+                          ],
+                          [
+                            'match' => [
+                              'author.folded' => [
+                                "query" =>  $this->query,
+                                "fuzziness" => 'AUTO',
+                                "prefix_length" => 3,
+                                "boost" => 0,
+                                "operator" => 'and'
+                              ]
+                            ]
+                          ],
+                          [
+                            'query_string' => [
+                              "query" => '"' . $this->query . '"',
+                              "fields" => ['notes'],
+                              "default_operator" => 'and'
+                            ],
+                          ],
+                        ],
+                        "minimum_should_match" => 1
                       ]
                     ],
                   ],
