@@ -107,7 +107,7 @@ class ArborElasticQuery
         'ages' => ['type' => 'terms'],
         'author' => ['type' => 'match'],
         'title' => ['type' => 'match'],
-        'subjects' => ['type' => 'match'],
+        'subjects' => ['type' => 'match', 'append' => 'stem'],
         'callnum' => ['type' => 'match_phrase'],
         'callnums' => ['type' => 'match'],
         'request_only' => ['type' => 'term', 'prepend' => 'flags', 'keyword' => false],
@@ -183,6 +183,9 @@ class ArborElasticQuery
           'title',
           'author',
           'artist'
+        ],
+        'stemmed' => [
+          'subjects'
         ]
       ],
       'community' => [
@@ -231,6 +234,8 @@ class ArborElasticQuery
               $this->enforceExactMatches($k, $values[$i]);
             }
           }
+        } else if (in_array($k, $search_fields[$this->path_id]['stemmed'])) {
+          $queryables[] = $k . '.stem:(' . trim($values[$i]) . ')';
         } else {
           $queryables[] = $k . ':(' . trim($values[$i]) . ')';
         }
@@ -299,7 +304,7 @@ class ArborElasticQuery
               [
                 'multi_match' => [
                   "query" => $this->query,
-                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium']
+                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects.stem', 'series', 'addl_author', 'addl_title', 'title_medium']
                 ],
               ],
               /* 
@@ -323,7 +328,7 @@ class ArborElasticQuery
                     [
                       'query_string' => [
                         "query" => $this->query,
-                        "fields" => ['notes'],
+                        "fields" => ['notes', 'subjects.stem'],
                         "default_operator" => 'and'
                       ],
                     ],
@@ -415,7 +420,7 @@ class ArborElasticQuery
                           [
                             'query_string' => [
                               "query" => '"' . $this->query . '"',
-                              "fields" => ['notes'],
+                              "fields" => ['notes', 'subjects.stem'],
                               "default_operator" => 'and'
                             ],
                           ],
