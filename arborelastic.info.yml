@@ -1,5 +1,5 @@
 name: 'Arborelastic'
 description: 'Custom search with Elasticsearch'
-core_version_requirement: ^9 || ^10
+core_version_requirement: ^10 || ^11
 package: 'AADL Modules'
 type: module
