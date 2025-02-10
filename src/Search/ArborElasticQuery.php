@@ -580,15 +580,17 @@ class ArborElasticQuery
   }
   private function applyFlatBoosts()
   {
-    // Helps boost closer exact matches over partial matches in broader queries
-    $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
-      'query_string' =>
-      [
-        "query" => $this->query,
-        "fields" => ['title', 'author', 'artist'],
-        "boost" => 100
-      ]
-    ];
+    // Helps boost closer exact matches over partial matches in broader queries, not included in wildcard queries
+    if (!str_contains($this->query, '*')) {
+      $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
+        'query_string' =>
+        [
+          "query" => $this->query,
+          "fields" => ['title', 'author', 'artist'],
+          "boost" => 100
+        ]
+      ];
+    }
     // Reduces Overdrive relevance compared to AADL-owned items
     $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
       'bool' => [
