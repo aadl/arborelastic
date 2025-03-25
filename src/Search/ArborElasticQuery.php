@@ -304,7 +304,7 @@ class ArborElasticQuery
               [
                 'multi_match' => [
                   "query" => $this->query,
-                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects.stem', 'stdnum', 'series', 'addl_author', 'addl_title', 'title_medium']
+                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author', 'addl_title', 'title_medium']
                 ],
               ],
               /* 
@@ -345,7 +345,7 @@ class ArborElasticQuery
                 'multi_match' => [
                   "query" => $this->query,
                   "type" => "phrase_prefix",
-                  "fields" => ["title.folded^20", "addl_title", "title_medium", "series", 'stdnum'],
+                  "fields" => ["title.folded^20", "addl_title", 'items.barcode', "title_medium", "series", 'stdnum'],
                 ]
               ],
               // same as above but for authors
