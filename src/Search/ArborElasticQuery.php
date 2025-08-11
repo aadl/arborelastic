@@ -9,9 +9,11 @@ class ArborElasticQuery
   public $args;
   public $query;
   public $path_id;
+  private $inline = false;
   private $connection;
   private $es_query;
   private $matchables;
+  private $overdrive = false;
   public function __construct($path_id, $query, $args)
   {
     $this->args = $args;
@@ -251,17 +253,20 @@ class ArborElasticQuery
     }
     // if there are no set terms, check for quotation search and set query_string with string escapes
     if (count($queryables) === 0 && preg_match('/^"(.*?)"/', $this->query)) {
-      $search_escapes = [',', '-'];
-      $search_replace = ['', ' '];
-      $escaped = str_replace($search_escapes, $search_replace, $this->query);
-      $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
-        [
-          'query_string' =>
+      if (!$this->overdrive) {
+        $search_escapes = [',', '-'];
+        $search_replace = ['', ' '];
+        $escaped = str_replace($search_escapes, $search_replace, $this->query);
+        $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
           [
-            "query" => $escaped,
-            "default_operator" => "and",
-          ]
-        ];
+            'query_string' =>
+            [
+              "query" => $escaped,
+              "default_operator" => "and",
+              "analyzer" => 'aadl_field_analyzer'
+            ]
+          ];
+      }
     } else if (count($queryables) === 0 && $this->query === '*') {
       $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
         [
@@ -273,6 +278,7 @@ class ArborElasticQuery
           ]
         ];
     } else if (count($queryables) > 0) {
+      $this->inline = true;
       // set query_string using the terms set above if there are any
       $queryString = '';
       foreach ($queryables as $q) {
@@ -296,6 +302,14 @@ class ArborElasticQuery
           ]
         ];
     } else {
+      $search_escapes = [',', '-'];
+      $search_replace = ['', ' '];
+      $escaped = str_replace($search_escapes, $search_replace, $this->query);
+      $words = explode(' ', $escaped);
+      $critical = array_filter($words, function ($w) {
+        return strlen($w) >= 4;
+      });
+
       // if no terms or quotation wrapped searches, use a more inclusive search approach using nested should as an or
       $formats = [
         'catalog' => [
@@ -303,8 +317,8 @@ class ArborElasticQuery
             'should' => [
               [
                 'multi_match' => [
-                  "query" => $this->query,
-                  "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author', 'addl_title', 'title_medium']
+                  "query" => strtolower($this->query),
+                  "fields" => ['title^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author', 'addl_title', 'title_medium']
                 ],
               ],
               /* 
@@ -317,12 +331,12 @@ class ArborElasticQuery
               */
               [
                 'bool' => [
-                  'must' => [
+                  'should' => [
                     [
                       'combined_fields' => [
                         "query" => $this->query,
                         "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
-                        "minimum_should_match" => "3<4"
+                        "minimum_should_match" => "3<75%"
                       ],
                     ],
                     [
@@ -387,47 +401,11 @@ class ArborElasticQuery
                     [
                       'combined_fields' => [
                         "query" => $this->query,
-                        "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
-                        "minimum_should_match" => "3<4",
+                        "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
+                        "minimum_should_match" => "3<75%",
                         "boost" => 40
                       ]
-                    ],
-                    [
-                      'bool' => [
-                        'should' => [
-                          [
-                            'match' => [
-                              'title.folded' => [
-                                "query" =>  $this->query,
-                                "fuzziness" => 'AUTO',
-                                "prefix_length" => 3,
-                                "boost" => 0,
-                                "operator" => 'and'
-                              ]
-                            ]
-                          ],
-                          [
-                            'match' => [
-                              'author.folded' => [
-                                "query" =>  $this->query,
-                                "fuzziness" => 'AUTO',
-                                "prefix_length" => 3,
-                                "boost" => 0,
-                                "operator" => 'and'
-                              ]
-                            ]
-                          ],
-                          [
-                            'query_string' => [
-                              "query" => '"' . $this->query . '"',
-                              "fields" => ['notes', 'subjects.stem'],
-                              "default_operator" => 'and'
-                            ],
-                          ],
-                        ],
-                        "minimum_should_match" => 1
-                      ]
-                    ],
+                    ]
                   ],
                 ]
               ]
@@ -464,6 +442,57 @@ class ArborElasticQuery
           ]
         ]
       ];
+      if (count($critical) > 0 && $this->path_id === 'catalog') {
+        $fQuery = implode('~1 ', $critical) . '~1';
+        $formats['catalog']['bool']['should'][4]['dis_max']['queries'][] =
+          [
+            'bool' => [
+              'should' => [
+                [
+                  'function_score' => [
+                    'query' => [
+                      'simple_query_string' => [
+                        "fields" => ['title.folded'],
+                        "query" =>  $fQuery,
+                        "boost" => 1,
+                      ]
+
+                    ],
+                    'min_score' => 6
+                  ]
+                ],
+                [
+                  'function_score' => [
+                    'query' => [
+                      'simple_query_string' => [
+                        "fields" => ['author.folded'],
+                        "query" =>  $fQuery,
+                        "boost" => 1,
+                      ]
+                    ],
+                    'min_score' => 6
+                  ],
+                ],
+                [
+                  'query_string' => [
+                    "query" => '"' . $this->query . '"',
+                    "fields" => ['notes', 'subjects.stem'],
+                    "default_operator" => 'and'
+                  ],
+                ],
+                [
+                  'query_string' => [
+                    "query" => $fQuery,
+                    "fields" => ['title', 'author', 'artist', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
+                    "minimum_should_match" => "3<75%",
+                    "boost" => 0
+                  ]
+                ],
+              ],
+              "minimum_should_match" => 2
+            ]
+          ];
+      }
       $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = $formats[$this->path_id];
     }
   }
@@ -581,13 +610,13 @@ class ArborElasticQuery
   private function applyFlatBoosts()
   {
     // Helps boost closer exact matches over partial matches in broader queries, not included in wildcard queries
-    if (!str_contains($this->query, '*')) {
+    if (!str_contains($this->query, '*') && !$this->inline) {
       $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
         'query_string' =>
         [
-          "query" => $this->query,
+          "query" => '"' . $this->query . '"',
           "fields" => ['title', 'author', 'artist'],
-          "boost" => 100
+          "boost" => 500
         ]
       ];
     }
@@ -606,11 +635,24 @@ class ArborElasticQuery
   }
   private function handleOverdrive($value)
   {
+    $overdriveString = preg_replace('/(?<=\w\.)(\s)(?=\w\.)/', '', $value);
     $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = [
-      'match' => [
-        'author.folded' => $value,
+      'bool' => [
+        'should' => [
+          [
+            'match' => [
+              'author.folded' => ["query" => $value, "operator" => "and", "analyzer" => "aadl_field_analyzer"]
+            ]
+          ],
+          [
+            'match' =>  [
+              'author.folded' => ["query" => $overdriveString, "operator" => "and", "analyzer" => "aadl_field_analyzer"]
+            ]
+          ]
+        ]
       ]
     ];
+    $this->overdrive = true;
   }
   private function scaffoldQuery($queryable, $key, $value)
   {
