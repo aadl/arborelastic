@@ -397,7 +397,7 @@ class ArborElasticQuery
                 'multi_match' => [
                   "query" => $this->query,
                   "type" => 'phrase_prefix',
-                  "fields" => ["author.folded^3"],
+                  "fields" => ["author.folded^3", 'addl_author.folded'],
                 ]
               ],
               /*
