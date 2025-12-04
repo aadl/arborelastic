@@ -41,18 +41,48 @@ class ArborElasticQuery
                       'match' => [
                         'lang' => [
                           'query' => 'eng',
-                          'boost' => 30
+                          'boost' => 8
                         ]
                       ]
                     ],
                   ],
                 ]
               ],
-              'field_value_factor' => [
-                'field' => 'popular_alltime',
-                'modifier' => 'log1p',
-                'missing' => 0
-              ]
+              'functions' => [
+                [
+                  'field_value_factor' => [
+                    'field' => 'popular_alltime',
+                    'modifier' => 'log2p',
+                    'missing' => 0
+                  ]
+                ],
+                [
+                  'filter' => [
+                    'term' => [
+                      'bib_type' => 'overdrive'
+                    ],
+                  ],
+                  'weight' => 0.1
+                ],
+                [
+                  // 3 year relevancy very slight decay
+                  'exp' => [
+                    'bib_created' => [
+                      'origin' => 'now',
+                      'scale' => '1095d',
+                      'decay' => 0.9
+                    ]
+                  ],
+                  'weight' => .05
+                ],
+                [
+                  'field_value_factor' => [
+                    'field' => 'copy_count',
+                    'modifier' => 'log2p',
+                    'missing' => 0
+                  ]
+                ]
+              ],
             ]
           ],
           'aggs' => [
@@ -318,7 +348,7 @@ class ArborElasticQuery
               [
                 'multi_match' => [
                   "query" => strtolower($this->query),
-                  "fields" => ['title^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author', 'addl_title', 'title_medium']
+                  "fields" => ['title^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author.folded', 'addl_title', 'title_medium']
                 ],
               ],
               /* 
@@ -336,7 +366,7 @@ class ArborElasticQuery
                       'combined_fields' => [
                         "query" => $this->query,
                         "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
-                        "minimum_should_match" => "3<75%"
+                        "minimum_should_match" => "3<4"
                       ],
                     ],
                     [
@@ -366,8 +396,8 @@ class ArborElasticQuery
               [
                 'multi_match' => [
                   "query" => $this->query,
-                  "type" => "phrase_prefix",
-                  "fields" => ["author.folded^20", "addl_author"],
+                  "type" => 'phrase_prefix',
+                  "fields" => ["author.folded^3"],
                 ]
               ],
               /*
@@ -403,10 +433,10 @@ class ArborElasticQuery
                         "query" => $this->query,
                         "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
                         "minimum_should_match" => "3<75%",
-                        "boost" => 40
+                        "boost" => 4
                       ]
                     ]
-                  ],
+                  ]
                 ]
               ]
             ],
@@ -454,11 +484,11 @@ class ArborElasticQuery
                       'simple_query_string' => [
                         "fields" => ['title.folded'],
                         "query" =>  $fQuery,
-                        "boost" => 1,
+                        "boost" => .5,
                       ]
 
                     ],
-                    'min_score' => 6
+                    'min_score' => 100
                   ]
                 ],
                 [
@@ -467,10 +497,10 @@ class ArborElasticQuery
                       'simple_query_string' => [
                         "fields" => ['author.folded'],
                         "query" =>  $fQuery,
-                        "boost" => 1,
+                        "boost" => .5,
                       ]
                     ],
-                    'min_score' => 6
+                    'min_score' => 10
                   ],
                 ],
                 [
@@ -482,7 +512,7 @@ class ArborElasticQuery
                 ],
                 [
                   'query_string' => [
-                    "query" => $fQuery,
+                    "query" => $this->query,
                     "fields" => ['title', 'author', 'artist', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
                     "minimum_should_match" => "3<75%",
                     "boost" => 0
@@ -615,23 +645,11 @@ class ArborElasticQuery
         'query_string' =>
         [
           "query" => '"' . $this->query . '"',
-          "fields" => ['title', 'author', 'artist'],
+          "fields" => ['title', 'title_medium', 'author', 'artist'],
           "boost" => 500
         ]
       ];
     }
-    // Reduces Overdrive relevance compared to AADL-owned items
-    $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
-      'bool' => [
-        'should' =>
-        [
-          "match" => [
-            "bib_type" => "Overdrive",
-          ]
-        ],
-        "boost" => 0.7
-      ]
-    ];
   }
   private function handleOverdrive($value)
   {
