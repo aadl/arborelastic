@@ -659,7 +659,7 @@ class ArborElasticQuery
         'should' => [
           [
             'match' => [
-              'author.folded' => ["query" => $value, "operator" => "and", "analyzer" => "aadl_field_analyzer"]
+              'author' => ["query" => $value, "operator" => "and", "analyzer" => "aadl_field_analyzer"]
             ]
           ],
           [
