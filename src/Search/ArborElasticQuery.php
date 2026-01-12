@@ -339,7 +339,17 @@ class ArborElasticQuery
       $critical = array_filter($words, function ($w) {
         return strlen($w) >= 4;
       });
-
+      /* 
+        stripping certain stop words in php instead of elastic so we can use it against a 
+        combined fields query without radically increasing mapping complexity. Combined
+        query returns better results than cross_fields with simpler score analysis in this 
+        setup.
+      */
+      $stop_words = ['a', 'an', 'the'];
+      $stop_query = $this->query;
+      foreach ($stop_words as $s) {
+        $stop_query = preg_replace('/(^|\s)\b(?i)' . $s . '\b(\s|$)/', ' ', $stop_query);
+      }
       // if no terms or quotation wrapped searches, use a more inclusive search approach using nested should as an or
       $formats = [
         'catalog' => [
@@ -364,7 +374,7 @@ class ArborElasticQuery
                   'should' => [
                     [
                       'combined_fields' => [
-                        "query" => $this->query,
+                        "query" => $stop_query,
                         "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
                         "minimum_should_match" => "3<4"
                       ],
@@ -430,7 +440,7 @@ class ArborElasticQuery
                     ],
                     [
                       'combined_fields' => [
-                        "query" => $this->query,
+                        "query" => $stop_query,
                         "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
                         "minimum_should_match" => "3<75%",
                         "boost" => 4
