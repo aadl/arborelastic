@@ -240,7 +240,7 @@ class ArborElasticQuery
 
     // match all : separated terms and iterate over the resulting key value pairs. 
     // Concatenate a query_string for as many as are supplied, checking against folded fields. store potential remainder for later wildcard inlining within stringable queries
-    $remainder = $this->query;
+    $remainder = str_replace('  ', ' ', $this->query);
     preg_match_all('/([a-z]\S*):((["\'\da-zA-Z\*\s].+?|[\*])(?=(?:[a-z]\S*:|\s\s|$)))/', $remainder, $matches);
     $keys = $matches[1];
     $values = $matches[2];
@@ -424,7 +424,7 @@ class ArborElasticQuery
                       'match' => [
                         'title.trigram' => [
                           "query" => $this->query,
-                          "minimum_should_match" => "3<-25%",
+                          "minimum_should_match" => "4<-25%",
                           "boost" => 0.3
                         ]
                       ]
@@ -433,7 +433,7 @@ class ArborElasticQuery
                       'match' => [
                         'author.trigram' => [
                           "query" => $this->query,
-                          "minimum_should_match" => "3<-25%",
+                          "minimum_should_match" => "4<-25%",
                           "boost" => 0.3
                         ]
                       ],
