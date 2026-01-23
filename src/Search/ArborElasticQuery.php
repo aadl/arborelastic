@@ -293,7 +293,7 @@ class ArborElasticQuery
             [
               "query" => $escaped,
               "default_operator" => "and",
-              "analyzer" => 'aadl_field_analyzer'
+              "analyzer" => 'aadl_search_analyzer'
             ]
           ];
       }
