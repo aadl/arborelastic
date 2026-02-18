@@ -391,7 +391,7 @@ class ArborElasticQuery
                       'combined_fields' => [
                         "query" => $stop_query,
                         "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
-                        "minimum_should_match" => "3<4"
+                        "minimum_should_match" => "3<-10%"
                       ],
                     ],
                     [
@@ -502,11 +502,10 @@ class ArborElasticQuery
                       'simple_query_string' => [
                         "fields" => ['title.folded'],
                         "query" =>  $fQuery,
-                        "boost" => .5,
+                        "minimum_should_match" => '2<80%'
                       ]
-
                     ],
-                    'min_score' => 100
+                    'min_score' => 25
                   ]
                 ],
                 [
@@ -532,9 +531,8 @@ class ArborElasticQuery
                 [
                   'query_string' => [
                     "query" => $this->query,
-                    "fields" => ['title', 'author', 'artist', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
-                    "default_operator" => "and",
-                    "boost" => 0
+                    "fields" => ['title', 'author', 'artist', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'pub_info'],
+                    "analyzer" => "aadl_search_analyzer"
                   ]
                 ],
               ],
