@@ -373,7 +373,7 @@ class ArborElasticQuery
               [
                 'multi_match' => [
                   "query" => strtolower($this->query),
-                  "fields" => ['title^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author.folded', 'addl_title', 'pub_info', 'title_medium'],
+                  "fields" => ['title^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author.folded', 'addl_title', 'pub_info', 'notes', 'title_medium'],
                 ],
               ],
               /* 
