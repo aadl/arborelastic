@@ -218,6 +218,9 @@ class ArborElasticQuery
         ],
         'stemmed' => [
           'subjects'
+        ],
+        'term' => [
+          'series'
         ]
       ],
       'community' => [
@@ -269,6 +272,18 @@ class ArborElasticQuery
         } else if (in_array($k, $search_fields[$this->path_id]['stemmed'])) {
           $queryables[] = $k . '.stem:(' . trim($values[$i]) . ')';
         } else {
+          if (in_array($k, $search_fields[$this->path_id]['term']) && preg_match('/^"(.*?)"/', $values[$i])) {
+
+            $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = [
+              'term' => [
+                $k . '.keyword' => [
+                  'value' => str_replace('"', '', $values[$i]),
+                  'case_insensitive' => true
+                ]
+              ]
+
+            ];
+          }
           $queryables[] = $k . ':(' . trim($values[$i]) . ')';
         }
       }
@@ -358,7 +373,7 @@ class ArborElasticQuery
               [
                 'multi_match' => [
                   "query" => strtolower($this->query),
-                  "fields" => ['title^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author.folded', 'addl_title', 'title_medium']
+                  "fields" => ['title^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author.folded', 'addl_title', 'pub_info', 'notes', 'title_medium'],
                 ],
               ],
               /* 
@@ -376,13 +391,14 @@ class ArborElasticQuery
                       'combined_fields' => [
                         "query" => $stop_query,
                         "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
-                        "minimum_should_match" => "3<4"
+                        "minimum_should_match" => "3<-10%"
                       ],
                     ],
                     [
                       'query_string' => [
                         "query" => $this->query,
-                        "fields" => ['notes', 'subjects.stem'],
+                        "fields" => ['notes', 'pub_info', 'subjects.stem'],
+                        "analyzer" => "aadl_search_analyzer",
                         "default_operator" => 'and'
                       ],
                     ],
@@ -437,14 +453,6 @@ class ArborElasticQuery
                           "boost" => 0.3
                         ]
                       ],
-                    ],
-                    [
-                      'combined_fields' => [
-                        "query" => $stop_query,
-                        "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
-                        "minimum_should_match" => "3<75%",
-                        "boost" => 4
-                      ]
                     ]
                   ]
                 ]
@@ -494,11 +502,10 @@ class ArborElasticQuery
                       'simple_query_string' => [
                         "fields" => ['title.folded'],
                         "query" =>  $fQuery,
-                        "boost" => .5,
+                        "minimum_should_match" => '2<80%'
                       ]
-
                     ],
-                    'min_score' => 100
+                    'min_score' => 25
                   ]
                 ],
                 [
@@ -517,15 +524,15 @@ class ArborElasticQuery
                   'query_string' => [
                     "query" => '"' . $this->query . '"',
                     "fields" => ['notes', 'subjects.stem'],
+                    "analyzer" => "aadl_search_analyzer",
                     "default_operator" => 'and'
                   ],
                 ],
                 [
                   'query_string' => [
                     "query" => $this->query,
-                    "fields" => ['title', 'author', 'artist', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
-                    "minimum_should_match" => "3<75%",
-                    "boost" => 0
+                    "fields" => ['title', 'author', 'artist', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'pub_info'],
+                    "analyzer" => "aadl_search_analyzer"
                   ]
                 ],
               ],
