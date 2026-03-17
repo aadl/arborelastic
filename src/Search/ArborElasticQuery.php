@@ -158,7 +158,7 @@ class ArborElasticQuery
       ],
       'website' => [
         'mat_code' => ['type' => 'terms', 'keyword' => false],
-        'location_name' => ['type' => 'term'],
+        'location_name' => ['type' => 'match'],
         'event_ages' => ['type' => 'terms'],
         'event_categories' => ['type' => 'terms', 'keyword' => false],
       ]
