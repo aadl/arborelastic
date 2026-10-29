@@ -1,16 +1,33 @@
 <?php
 
 namespace Drupal\arborelastic\Search\Query;
+/*
+construct the query, creating the php-side analyzed strings to append in subsequent elastic clauses 
+*/
 
 class AnalyzedQuery
 {
   protected const NUMBER_WORDS = [
-    1 => ['one', 'first'], 2 => ['two', 'second'], 3 => ['three', 'third'], 4 => ['four', 'fourth'],
-    5 => ['five', 'fifth'], 6 => ['six', 'sixth'], 7 => ['seven', 'seventh'], 8 => ['eight', 'eighth'],
-    9 => ['nine', 'ninth'], 10 => ['ten', 'tenth'], 11 => ['eleven', 'eleventh'], 12 => ['twelve', 'twelfth'],
-    13 => ['thirteen', 'thirteenth'], 14 => ['fourteen', 'fourteenth'], 15 => ['fifteen', 'fifteenth'],
-    16 => ['sixteen', 'sixteenth'], 17 => ['seventeen', 'seventeenth'], 18 => ['eighteen', 'eighteenth'],
-    19 => ['nineteen', 'nineteenth'], 20 => ['twenty', 'twentieth'],
+    1 => ['one', 'first'],
+    2 => ['two', 'second'],
+    3 => ['three', 'third'],
+    4 => ['four', 'fourth'],
+    5 => ['five', 'fifth'],
+    6 => ['six', 'sixth'],
+    7 => ['seven', 'seventh'],
+    8 => ['eight', 'eighth'],
+    9 => ['nine', 'ninth'],
+    10 => ['ten', 'tenth'],
+    11 => ['eleven', 'eleventh'],
+    12 => ['twelve', 'twelfth'],
+    13 => ['thirteen', 'thirteenth'],
+    14 => ['fourteen', 'fourteenth'],
+    15 => ['fifteen', 'fifteenth'],
+    16 => ['sixteen', 'sixteenth'],
+    17 => ['seventeen', 'seventeenth'],
+    18 => ['eighteen', 'eighteenth'],
+    19 => ['nineteen', 'nineteenth'],
+    20 => ['twenty', 'twentieth'],
   ];
 
   public readonly string $lower;

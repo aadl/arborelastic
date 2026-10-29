@@ -150,9 +150,30 @@ class CatalogIndexProfile extends AbstractIndexProfile
     ];
   }
 
+  public function getQueryBoosts(): array
+  {
+    return [
+      // season/volume numbers live in title_medium and callnums as often as title
+      'numbers' => [
+        'type' => 'number_match',
+        'fields' => ['title', 'title_medium', 'callnums', 'series'],
+        'weight' => 3,
+      ],
+    ];
+  }
+
   public function getDirectSortFields(): array
   {
     return ['bib_created', 'popular_week', 'popular_month', 'popular_year', 'popular_alltime'];
+  }
+
+  /*
+    Base fields only: the .trigram, .folded (edge-ngram) and .stem subfields would turn a quoted
+    phrase into substring, prefix or stemmed matches ("harry potter's" matching every "Harry Potter" title)
+  */
+  public function getQuotedFields(): ?array
+  {
+    return ['title', 'title_medium', 'author', 'artist', 'addl_author', 'addl_title', 'series', 'subjects', 'notes', 'pub_info', 'callnum', 'callnums', 'stdnum', 'material', 'edition', 'language_note', 'license', 'licensed_from', 'pub_year', 'pub_date', 'specifications', 'tracks'];
   }
 
   public function getExactPhraseBoost(): array
@@ -198,12 +219,35 @@ class CatalogIndexProfile extends AbstractIndexProfile
     ];
   }
 
+  /*
+    title and title_medium are scored as one field so words cataloged in title_medium (e.g. "Season 4")
+    carry title weight instead of being discarded by the best_fields pick. Written forms of query
+    numbers are included so "Season four" also matches.
+  */
   protected function broadClause(AnalyzedQuery $q): array
   {
+    $numberWords = [];
+    foreach ($q->numbers as $forms) {
+      $numberWords = array_merge($numberWords, array_slice($forms, 1));
+    }
+
     return [
-      'multi_match' => [
-        "query" => $q->lower,
-        "fields" => ['title^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author.folded', 'addl_title', 'pub_info', 'notes', 'title_medium'],
+      'dis_max' => [
+        'queries' => $this->namer->namedClauses([
+          'title' => [
+            'combined_fields' => [
+              "query" => trim($q->lower . ' ' . implode(' ', $numberWords)),
+              "fields" => ['title', 'title_medium'],
+              "boost" => 20,
+            ],
+          ],
+          'fields' => [
+            'multi_match' => [
+              "query" => $q->lower,
+              "fields" => ['author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author.folded', 'addl_title', 'pub_info', 'notes'],
+            ],
+          ],
+        ]),
       ],
     ];
   }
@@ -282,7 +326,7 @@ class CatalogIndexProfile extends AbstractIndexProfile
         'match' => [
           'title.trigram' => [
             "query" => $q->raw,
-            "minimum_should_match" => "4<-25%",
+            "minimum_should_match" => "4<-10%",
             "boost" => 0.3,
           ],
         ],
@@ -336,7 +380,7 @@ class CatalogIndexProfile extends AbstractIndexProfile
                   "boost" => .5,
                 ],
               ],
-              'min_score' => 10,
+              'min_score' => 20,
             ],
           ],
           [

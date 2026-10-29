@@ -3,10 +3,10 @@
 namespace Drupal\arborelastic\Search\Debug;
 
 /*
-  Adds Elasticsearch _name labels to query clauses when named queries are enabled (named_queries=1),
+  Adds  _name labels to query clauses when named queries are enabled (named_queries=1),
   so each hit reports which clauses matched it. A clause that already contains named clauses has
   those names prefixed instead ("combined:fields"), keeping nested names traceable to their parent.
-  When disabled, clauses pass through unchanged.
+  When disabled, clauses pass through.
 */
 
 class QueryNamer
@@ -36,7 +36,6 @@ class QueryNamer
     return $clause;
   }
 
-  // names each clause by its key and returns them as a list
   public function namedClauses(array $clauses): array
   {
     $named = [];

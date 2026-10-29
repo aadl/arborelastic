@@ -113,13 +113,14 @@ class ArborElasticQuery
     // if there are no set terms, check for quotation search and set query_string with string escapes
     if (preg_match('/^"(.*?)"/', $text)) {
       if (!$parsed->hasStandalone) {
+        // no analyzer override, so each field's own search analyzer applies
         $quoted = [
           "query" => (new AnalyzedQuery($text))->escaped,
           "default_operator" => "and",
         ];
-        $analyzer = $this->profile->getQuotedAnalyzer();
-        if ($analyzer !== null) {
-          $quoted['analyzer'] = $analyzer;
+        $fields = $this->profile->getQuotedFields();
+        if ($fields !== null) {
+          $quoted['fields'] = $fields;
         }
         $this->doc->addMust(['query_string' => $quoted]);
       }
@@ -192,7 +193,7 @@ class ArborElasticQuery
   // Helps boost closer exact matches over partial matches in broader queries
   private function applyFlatBoosts(QueryPlan $plan): void
   {
-    if (!$plan->allowsRelevanceBoosts()) {
+    if (!$plan->allowsExactPhraseBoost()) {
       return;
     }
     $exactPhrase = $this->profile->getExactPhraseBoost();
