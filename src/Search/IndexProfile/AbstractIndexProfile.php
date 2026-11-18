@@ -9,11 +9,10 @@ use Drupal\arborelastic\Search\Debug\QueryNamer;
   overrides nearly all of this since its relevancy logic is genuinely more
   involved.
 */
+
 abstract class AbstractIndexProfile implements IndexProfileInterface
 {
-  public function __construct(protected string $indexName, protected QueryNamer $namer = new QueryNamer())
-  {
-  }
+  public function __construct(protected string $indexName, protected QueryNamer $namer = new QueryNamer()) {}
 
   public function getIndexName(): string
   {
@@ -48,10 +47,10 @@ abstract class AbstractIndexProfile implements IndexProfileInterface
     return ['bib_created'];
   }
 
-  // defined in the settings of every current index; a profile for an index without it returns null
-  public function getQuotedAnalyzer(): ?string
+  // the node indices have no loosely analyzed subfields, so a quoted phrase is exact on every field
+  public function getQuotedFields(): ?array
   {
-    return 'aadl_search_analyzer';
+    return null;
   }
 
   public function getExactPhraseBoost(): array

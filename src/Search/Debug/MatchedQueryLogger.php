@@ -3,13 +3,11 @@
 namespace Drupal\arborelastic\Search\Debug;
 
 /*
-  For dev debug: logs which named clauses (see QueryNamer) matched each hit on the first page of results.
-  Append named_queries=1 to any search for this to log, run `drush en dblog` in the container locally,
-  and look for the arborelastic type at /admin/reports/dblog.
+  For dev debug. logs named clauses matched on each hit on the first page of results.
+  Add named_queries=1 to any search for this to log, run `drush en dblog` locally. Look for arborelastic type
 
   Clauses listed are ones that matched, not necessarily ones that counted toward the score (a dis_max
-  only scores its best child). This is not a full replacement for /_explain. If you need extensive
-  debug, using an _explain request is recommended.
+  only scores its highest ranking query). The _explain endpoint will better diagnose specific record-level issues
 */
 
 class MatchedQueryLogger

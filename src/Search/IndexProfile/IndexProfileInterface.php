@@ -27,8 +27,11 @@ interface IndexProfileInterface
   // date and numeric sort fields, sorted on directly rather than on their .keyword subfield
   public function getDirectSortFields(): array;
 
-  // analyzer for quoted searches, or null to use each field's own
-  public function getQuotedAnalyzer(): ?string;
+  /*
+    fields for quoted searches, or null to search every field. Should only list fields whose analyzers
+    keep a quoted phrase exact (no trigram, edge-ngram or stemmed subfields)
+  */
+  public function getQuotedFields(): ?array;
 
   // ['fields' => [...], 'boost' => n] for the exact phrase boost on free-text searches
   public function getExactPhraseBoost(): array;

@@ -46,23 +46,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "star trek season 4",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "star trek season 4 4th four fourth",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "star trek season 4",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -134,7 +148,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "Star Trek Season 4",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -176,7 +190,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -253,6 +267,20 @@
                                     "modifier": "log2p",
                                     "missing": 0
                                 }
+                            },
+                            {
+                                "filter": {
+                                    "multi_match": {
+                                        "query": "4 4th four fourth",
+                                        "fields": [
+                                            "title",
+                                            "title_medium",
+                                            "callnums",
+                                            "series"
+                                        ]
+                                    }
+                                },
+                                "weight": 3
                             }
                         ]
                     }
@@ -322,25 +350,40 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "star trek season 4",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
-                                                        ],
-                                                        "_name": "broad"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "star trek season 4 4th four fourth",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20,
+                                                                    "_name": "broad:title"
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "star trek season 4",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ],
+                                                                    "_name": "broad:fields"
+                                                                }
+                                                            }
+                                                        ]
                                                     }
                                                 },
                                                 {
@@ -415,7 +458,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "Star Trek Season 4",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3,
                                                                         "_name": "fuzzy:title_trigram"
                                                                     }
@@ -459,7 +502,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -537,6 +580,20 @@
                                     "modifier": "log2p",
                                     "missing": 0
                                 }
+                            },
+                            {
+                                "filter": {
+                                    "multi_match": {
+                                        "query": "4 4th four fourth",
+                                        "fields": [
+                                            "title",
+                                            "title_medium",
+                                            "callnums",
+                                            "series"
+                                        ]
+                                    }
+                                },
+                                "weight": 3
                             }
                         ]
                     }
@@ -577,18 +634,6 @@
                                                 "boost": 8
                                             }
                                         }
-                                    },
-                                    {
-                                        "query_string": {
-                                            "query": "\"\"Star Trek Season 4\"\"",
-                                            "fields": [
-                                                "title",
-                                                "title_medium",
-                                                "author",
-                                                "artist"
-                                            ],
-                                            "boost": 500
-                                        }
                                     }
                                 ],
                                 "filter": [
@@ -603,7 +648,21 @@
                                         "query_string": {
                                             "query": "\"Star Trek Season 4\"",
                                             "default_operator": "and",
-                                            "analyzer": "aadl_search_analyzer"
+                                            "fields": [
+                                                "title",
+                                                "title_medium",
+                                                "author",
+                                                "artist",
+                                                "addl_author",
+                                                "addl_title",
+                                                "series",
+                                                "subjects",
+                                                "notes",
+                                                "pub_info",
+                                                "callnum",
+                                                "callnums",
+                                                "stdnum"
+                                            ]
                                         }
                                     }
                                 ]
@@ -641,6 +700,20 @@
                                     "modifier": "log2p",
                                     "missing": 0
                                 }
+                            },
+                            {
+                                "filter": {
+                                    "multi_match": {
+                                        "query": "4 4th four fourth",
+                                        "fields": [
+                                            "title",
+                                            "title_medium",
+                                            "callnums",
+                                            "series"
+                                        ]
+                                    }
+                                },
+                                "weight": 3
                             }
                         ]
                     }
@@ -1133,23 +1206,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "dune",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -1221,7 +1308,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "dune",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -1263,7 +1350,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -1414,23 +1501,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "1984",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "1984 1984th",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "1984",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -1502,7 +1603,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "1984",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -1544,7 +1645,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -1636,6 +1737,20 @@
                                     "modifier": "log2p",
                                     "missing": 0
                                 }
+                            },
+                            {
+                                "filter": {
+                                    "multi_match": {
+                                        "query": "1984 1984th",
+                                        "fields": [
+                                            "title",
+                                            "title_medium",
+                                            "callnums",
+                                            "series"
+                                        ]
+                                    }
+                                },
+                                "weight": 3
                             }
                         ]
                     }
@@ -1705,23 +1820,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "harry potter 3",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "harry potter 3 3rd three third",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "harry potter 3",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -1793,7 +1922,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "harry potter 3",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -1835,7 +1964,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -1925,6 +2054,20 @@
                                     "modifier": "log2p",
                                     "missing": 0
                                 }
+                            },
+                            {
+                                "filter": {
+                                    "multi_match": {
+                                        "query": "3 3rd three third",
+                                        "fields": [
+                                            "title",
+                                            "title_medium",
+                                            "callnums",
+                                            "series"
+                                        ]
+                                    }
+                                },
+                                "weight": 3
                             }
                         ]
                     }
@@ -1991,23 +2134,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "star trek season 4 disc 2",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "star trek season 4 disc 2 4th four fourth 2nd two second",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "star trek season 4 disc 2",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -2079,7 +2236,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "Star Trek Season 4 disc 2",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -2121,7 +2278,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -2198,6 +2355,20 @@
                                     "modifier": "log2p",
                                     "missing": 0
                                 }
+                            },
+                            {
+                                "filter": {
+                                    "multi_match": {
+                                        "query": "4 4th four fourth 2 2nd two second",
+                                        "fields": [
+                                            "title",
+                                            "title_medium",
+                                            "callnums",
+                                            "series"
+                                        ]
+                                    }
+                                },
+                                "weight": 3
                             }
                         ]
                     }
@@ -2264,23 +2435,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "game of thrones season four",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "game of thrones season four",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "game of thrones season four",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -2352,7 +2537,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "game of thrones season four",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -2394,7 +2579,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -2539,23 +2724,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "dog man 12",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "dog man 12 12th twelve twelfth",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "dog man 12",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -2627,7 +2826,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "dog man 12",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -2690,6 +2889,20 @@
                                     "modifier": "log2p",
                                     "missing": 0
                                 }
+                            },
+                            {
+                                "filter": {
+                                    "multi_match": {
+                                        "query": "12 12th twelve twelfth",
+                                        "fields": [
+                                            "title",
+                                            "title_medium",
+                                            "callnums",
+                                            "series"
+                                        ]
+                                    }
+                                },
+                                "weight": 3
                             }
                         ]
                     }
@@ -4263,23 +4476,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "chabon",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "chabon",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "chabon",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -4351,7 +4578,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "chabon",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -4393,7 +4620,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -4509,18 +4736,6 @@
                                                 "query": "eng",
                                                 "boost": 8
                                             }
-                                        }
-                                    },
-                                    {
-                                        "query_string": {
-                                            "query": "\"\"michael chabon\"\"",
-                                            "fields": [
-                                                "title",
-                                                "title_medium",
-                                                "author",
-                                                "artist"
-                                            ],
-                                            "boost": 500
                                         }
                                     }
                                 ],
@@ -4705,23 +4920,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "chabon lethem",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "chabon lethem",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "chabon lethem",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -4793,7 +5022,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "chabon lethem",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -4835,7 +5064,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -7994,19 +8223,7 @@
                                     {
                                         "query_string": {
                                             "query": "\"storytime\"",
-                                            "default_operator": "and",
-                                            "analyzer": "aadl_search_analyzer"
-                                        }
-                                    }
-                                ],
-                                "should": [
-                                    {
-                                        "query_string": {
-                                            "query": "\"\"storytime\"\"",
-                                            "fields": [
-                                                "title"
-                                            ],
-                                            "boost": 500
+                                            "default_operator": "and"
                                         }
                                     }
                                 ]
@@ -8390,19 +8607,7 @@
                                     {
                                         "query_string": {
                                             "query": "\"ann arbor\"",
-                                            "default_operator": "and",
-                                            "analyzer": "aadl_search_analyzer"
-                                        }
-                                    }
-                                ],
-                                "should": [
-                                    {
-                                        "query_string": {
-                                            "query": "\"\"ann arbor\"\"",
-                                            "fields": [
-                                                "title"
-                                            ],
-                                            "boost": 500
+                                            "default_operator": "and"
                                         }
                                     }
                                 ]
@@ -8640,23 +8845,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "dune",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -8728,7 +8947,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "dune",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -8770,7 +8989,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -8920,23 +9139,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "dune",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -9008,7 +9241,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "dune",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -9050,7 +9283,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -9200,23 +9433,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "dune",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -9288,7 +9535,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "dune",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -9330,7 +9577,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -9480,23 +9727,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "dune",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -9568,7 +9829,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "dune",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -9610,7 +9871,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -9761,25 +10022,40 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "dune",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
-                                                        ],
-                                                        "_name": "broad"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20,
+                                                                    "_name": "broad:title"
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "dune",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ],
+                                                                    "_name": "broad:fields"
+                                                                }
+                                                            }
+                                                        ]
                                                     }
                                                 },
                                                 {
@@ -9854,7 +10130,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "dune",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3,
                                                                         "_name": "fuzzy:title_trigram"
                                                                     }
@@ -9898,7 +10174,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {
@@ -10261,19 +10537,6 @@
                                                 "boost": 8
                                             }
                                         }
-                                    },
-                                    {
-                                        "query_string": {
-                                            "query": "\"\"dune\"\"",
-                                            "fields": [
-                                                "title",
-                                                "title_medium",
-                                                "author",
-                                                "artist"
-                                            ],
-                                            "boost": 500,
-                                            "_name": "exact_phrase"
-                                        }
                                     }
                                 ],
                                 "filter": [
@@ -10288,7 +10551,21 @@
                                         "query_string": {
                                             "query": "\"dune\"",
                                             "default_operator": "and",
-                                            "analyzer": "aadl_search_analyzer"
+                                            "fields": [
+                                                "title",
+                                                "title_medium",
+                                                "author",
+                                                "artist",
+                                                "addl_author",
+                                                "addl_title",
+                                                "series",
+                                                "subjects",
+                                                "notes",
+                                                "pub_info",
+                                                "callnum",
+                                                "callnums",
+                                                "stdnum"
+                                            ]
                                         }
                                     }
                                 ]
@@ -10395,23 +10672,37 @@
                                         "bool": {
                                             "should": [
                                                 {
-                                                    "multi_match": {
-                                                        "query": "kavalier",
-                                                        "fields": [
-                                                            "title^20",
-                                                            "author.folded^10",
-                                                            "artist.folded^10",
-                                                            "callnum",
-                                                            "callnums",
-                                                            "items.barcode",
-                                                            "subjects.stem",
-                                                            "stdnum",
-                                                            "series",
-                                                            "addl_author.folded",
-                                                            "addl_title",
-                                                            "pub_info",
-                                                            "notes",
-                                                            "title_medium"
+                                                    "dis_max": {
+                                                        "queries": [
+                                                            {
+                                                                "combined_fields": {
+                                                                    "query": "kavalier",
+                                                                    "fields": [
+                                                                        "title",
+                                                                        "title_medium"
+                                                                    ],
+                                                                    "boost": 20
+                                                                }
+                                                            },
+                                                            {
+                                                                "multi_match": {
+                                                                    "query": "kavalier",
+                                                                    "fields": [
+                                                                        "author.folded^10",
+                                                                        "artist.folded^10",
+                                                                        "callnum",
+                                                                        "callnums",
+                                                                        "items.barcode",
+                                                                        "subjects.stem",
+                                                                        "stdnum",
+                                                                        "series",
+                                                                        "addl_author.folded",
+                                                                        "addl_title",
+                                                                        "pub_info",
+                                                                        "notes"
+                                                                    ]
+                                                                }
+                                                            }
                                                         ]
                                                     }
                                                 },
@@ -10483,7 +10774,7 @@
                                                                 "match": {
                                                                     "title.trigram": {
                                                                         "query": "kavalier",
-                                                                        "minimum_should_match": "4<-25%",
+                                                                        "minimum_should_match": "4<-10%",
                                                                         "boost": 0.3
                                                                     }
                                                                 }
@@ -10525,7 +10816,7 @@
                                                                                         "boost": 0.5
                                                                                     }
                                                                                 },
-                                                                                "min_score": 10
+                                                                                "min_score": 20
                                                                             }
                                                                         },
                                                                         {

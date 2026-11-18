@@ -3,8 +3,9 @@
 namespace Drupal\arborelastic\Search\Query;
 
 /*
-  Outcome of applying the search text: the text the later steps work from (the raw search with
-  standalone field prefixes like author: removed), and whether it was handled as inline fields.
+  This is here to handle the first-pass logic on the string. Mostly just to fully detach ArborElasticQuery from the
+  index profiles, so updates in the profiles can be independently without affecting another. This method affects all three
+
 */
 
 class QueryPlan
@@ -18,5 +19,14 @@ class QueryPlan
   public function allowsRelevanceBoosts(): bool
   {
     return !$this->inline && !str_contains($this->text, '*');
+  }
+
+  /*
+    The exact phrase boost wraps the text in quotes, so text with quotes of its own would become
+    ""..."", which query_string reads as loose terms rather than a phrase
+  */
+  public function allowsExactPhraseBoost(): bool
+  {
+    return $this->allowsRelevanceBoosts() && !str_contains($this->text, '"');
   }
 }

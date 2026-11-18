@@ -1,7 +1,7 @@
 <?php
 
 /*
-  Rewrites requests.json with the requests the current code builds for each case in it. Run it
+  Rewrites requests.json with the request structure the current code builds for each case in within the json file. Run it
   only when a change is meant to alter requests, and review the fixture diff alongside the change:
 
     drush php:script modules/custom/arborelastic/tests/fixtures/regenerate.php

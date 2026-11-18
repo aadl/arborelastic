@@ -6,8 +6,9 @@ use Drupal\arborelastic\Search\Query\AnalyzedQuery;
 
 /*
   Translates a query boost's config (from IndexProfile::getQueryBoosts()). Boosts multiply
-  alongside the profile's base functions (popularity etc.), and return null
-  when the search text doesn't need them
+  alongside the profile's base functions (popularity, overdriv eetc.).
+
+  Only one case for now, which improves relevance of numbers in title-ish fields. 
  */
 
 class QueryBoostBuilder
@@ -36,7 +37,7 @@ class QueryBoostBuilder
         ];
     }
 
-    // types are only ever set in profile code, so an unknown one is a typo there
+    // types are only ever set in profile code, so an unknown one is a typo. For dev.
     throw new \LogicException("Unknown query boost type '{$boost['type']}'");
   }
 }
