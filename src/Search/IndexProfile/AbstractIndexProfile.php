@@ -9,11 +9,10 @@ use Drupal\arborelastic\Search\Debug\QueryNamer;
   overrides nearly all of this since its relevancy logic is genuinely more
   involved.
 */
+
 abstract class AbstractIndexProfile implements IndexProfileInterface
 {
-  public function __construct(protected string $indexName, protected QueryNamer $namer = new QueryNamer())
-  {
-  }
+  public function __construct(protected string $indexName, protected QueryNamer $namer = new QueryNamer()) {}
 
   public function getIndexName(): string
   {
