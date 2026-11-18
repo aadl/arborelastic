@@ -2,184 +2,83 @@
 
 namespace Drupal\arborelastic\Search;
 
-use Elasticsearch\ClientBuilder;
+use Drupal\arborelastic\Search\Connection\ElasticsearchConnectionFactory;
+use Drupal\arborelastic\Search\Debug\MatchedQueryLogger;
+use Drupal\arborelastic\Search\Debug\QueryNamer;
+use Drupal\arborelastic\Search\Field\FieldClauseBuilder;
+use Drupal\arborelastic\Search\IndexProfile\IndexProfileFactory;
+use Drupal\arborelastic\Search\IndexProfile\IndexProfileInterface;
+use Drupal\arborelastic\Search\Parser\InlineClauseBuilder;
+use Drupal\arborelastic\Search\Parser\InlineFieldQueryParser;
+use Drupal\arborelastic\Search\Query\AnalyzedQuery;
+use Drupal\arborelastic\Search\Query\EsQueryDocument;
+use Drupal\arborelastic\Search\Query\QueryPlan;
+use Drupal\arborelastic\Search\Score\QueryBoostBuilder;
+use Elasticsearch\Client;
 
 class ArborElasticQuery
 {
   public $args;
   public $query;
   public $path_id;
-  private $inline = false;
-  private $connection;
-  private $es_query;
-  private $matchables;
-  private $overdrive = false;
-  public function __construct($path_id, $query, $args)
+  private ?Client $connection;
+  private IndexProfileInterface $profile;
+  private QueryNamer $namer;
+  private EsQueryDocument $doc;
+  private FieldClauseBuilder $fieldClauseBuilder;
+  private InlineFieldQueryParser $inlineParser;
+  private InlineClauseBuilder $inlineClauseBuilder;
+  private QueryBoostBuilder $queryBoostBuilder;
+
+  /*
+    $profile and $connection are optional so tests can build requests without Drupal config or a
+    live cluster; by default the profile comes from IndexProfileFactory and the client is created
+    on first search. The client and profile factory are candidates for Drupal services if the
+    team prefers that pattern.
+  */
+  public function __construct($path_id, $query, $args, ?IndexProfileInterface $profile = null, ?Client $connection = null)
   {
     $this->args = $args;
     $this->query = $query;
     $this->path_id = $path_id;
-    $indexes = \Drupal::config('arborelastic.settings')->get('arborelastic_indexes');
-    $indexes = explode("\n", $indexes);
-    foreach ($indexes as $i => $index) {
-      $parts = explode(':', $index);
-      $indexes[$parts[0]] = trim($parts[1]);
-      unset($indexes[$i]);
-    }
-    $formats = [
-      'catalog' => [
-        'index' => $indexes[$path_id],
-        'from' => (isset($args['page']) ? $args['page'] : 0) * (isset($args['size']) ? $args['size'] : 25),
-        'body' => [
-          'size' => isset($args['size']) ? $args['size'] : 25,
-          'query' => [
-            'function_score' => [
-              'query' => [
-                'bool' => [
-                  'should' => [
-                    [
-                      'match' => [
-                        'lang' => [
-                          'query' => 'eng',
-                          'boost' => 8
-                        ]
-                      ]
-                    ],
-                  ],
-                ]
-              ],
-              'functions' => [
-                [
-                  'field_value_factor' => [
-                    'field' => 'popular_alltime',
-                    'modifier' => 'log2p',
-                    'missing' => 0
-                  ]
-                ],
-                [
-                  'filter' => [
-                    'term' => [
-                      'bib_type' => 'overdrive'
-                    ],
-                  ],
-                  'weight' => 0.1
-                ],
-                [
-                  // 3 year relevancy very slight decay
-                  'exp' => [
-                    'bib_created' => [
-                      'origin' => 'now',
-                      'scale' => '1095d',
-                      'decay' => 0.9
-                    ]
-                  ],
-                  'weight' => .05
-                ],
-                [
-                  'field_value_factor' => [
-                    'field' => 'copy_count',
-                    'modifier' => 'log2p',
-                    'missing' => 0
-                  ]
-                ]
-              ],
-            ]
-          ],
-          'aggs' => [
-            'mat_code' => [
-              'terms' => [
-                'field' => 'mat_code.keyword'
-              ]
-            ],
-            'lang' => [
-              'terms' => [
-                'field' => 'lang.keyword'
-              ]
-            ]
-          ],
-        ]
-      ],
-      'website' => [
-        'index' => $indexes[$path_id],
-        'from' => (isset($args['page']) ? $args['page'] : 0) * (isset($args['size']) ? $args['size'] : 25),
-        'body' => [
-          'size' => isset($args['size']) ? $args['size'] : 25,
-          'query' => [
-            'function_score' => [
-              'query' => [
-                'bool' => []
-              ]
-            ]
-          ],
 
-        ]
-      ],
-      'community' => [
-        'index' => $indexes[$path_id],
-        'from' => (isset($args['page']) ? $args['page'] : 0) * (isset($args['size']) ? $args['size'] : 25),
-        'body' => [
-          'size' => isset($args['size']) ? $args['size'] : 25,
-          'query' => [
-            'function_score' => [
-              'query' => [
-                'bool' => []
-              ]
-            ]
-          ],
-        ]
-      ]
-    ];
-    // prepend and appends are for nested fields. May want to add a dedicated method at some point to flesh these out
-    $matchables = [
-      'catalog' => [
-        'available_branches' => ['type' => 'match'],
-        'mat_code' => ['type' => 'terms'],
-        'lang' => ['type' => 'term'],
-        'nonfiction' => ['type' => 'term', 'keyword' => false],
-        'ages' => ['type' => 'terms'],
-        'author' => ['type' => 'match'],
-        'title' => ['type' => 'match'],
-        'subjects' => ['type' => 'match', 'append' => 'stem'],
-        'callnum' => ['type' => 'match_phrase'],
-        'callnums' => ['type' => 'match'],
-        'request_only' => ['type' => 'term', 'prepend' => 'flags', 'keyword' => false],
-        'reading_level' => ['type' => 'lexile_range', 'append' => 'lexile'],
-        'licensed_from' => ['type' => 'match']
-      ],
-      'community' => [
-        'old_news_taxonomy' => ['type' => 'terms'],
-        'mat_code' => ['type' => 'terms', 'keyword' => false],
-        'oldnews_date' => [
-          'type' => 'date_range',
-        ],
-        'photo_indexed' => [
-          'type' => 'term'
-        ]
-      ],
-      'website' => [
-        'mat_code' => ['type' => 'terms', 'keyword' => false],
-        'location_name' => ['type' => 'match'],
-        'event_ages' => ['type' => 'terms'],
-        'event_categories' => ['type' => 'terms', 'keyword' => false],
-      ]
-    ];
-    $this->matchables = $matchables[$path_id];
-    $this->es_query = $formats[$path_id];
-    $hosts = [
-      \Drupal::config('arborelastic.settings')->get('arborelastic_host') . ':' .  \Drupal::config('arborelastic.settings')->get('arborelastic_port'),
-    ];
-    $this->connection = ClientBuilder::create()->setHosts($hosts)->build();
+    $this->namer = new QueryNamer(!empty($args['named_queries']));
+    $this->profile = $profile ?? (new IndexProfileFactory())->create($path_id, $this->namer);
+
+    $this->fieldClauseBuilder = new FieldClauseBuilder();
+    $this->inlineParser = new InlineFieldQueryParser();
+    $this->inlineClauseBuilder = new InlineClauseBuilder();
+    $this->queryBoostBuilder = new QueryBoostBuilder();
+    $this->connection = $connection;
   }
-  public function query()
+
+  /*
+    The Elasticsearch request for this search, without sending it. Each call starts again from
+    the profile's base query.
+  */
+  public function buildRequest(): array
   {
+    $page = $this->args['page'] ?? 0;
+    $size = $this->args['size'] ?? 25;
+    $this->doc = new EsQueryDocument($this->profile->getBaseQuery($page * $size, $size));
+
     $this->applyFilterTerms();
-    $this->applyQueryTerms();
+    $plan = $this->applyQueryTerms();
     $this->applyMatchTerms();
     $this->applySortTerms();
-    $this->applyFlatBoosts();
+    $this->applyFlatBoosts($plan);
+    $this->applyQueryBoosts($plan);
+
+    return $this->doc->toArray();
+  }
+
+  public function query(): array
+  {
+    $request = $this->buildRequest();
 
     try {
-      $result = $this->connection->search($this->es_query);
+      $this->connection ??= (new ElasticsearchConnectionFactory())->create();
+      $result = $this->connection->search($request);
     } catch (\Exception $e) {
       $result = [
         'error' => 'Elasticsearch Query Failed',
@@ -189,589 +88,138 @@ class ArborElasticQuery
     $result['cur_page'] = $this->args['page'] ?? 0;
     $result['size'] = $this->args['size'] ?? 25;
 
+    if (!empty($this->args['named_queries']) && isset($result['hits']['hits'])) {
+      (new MatchedQueryLogger())->log($this->path_id, $this->query, $request['from'], $result['hits']['hits']);
+    }
+
     return $result;
   }
-  private function applyQueryTerms()
+
+  private function applyQueryTerms(): QueryPlan
   {
-    // Queryables in this function are inline search terms. title:* author:* etc
-    $search_fields = [
-      'catalog' => [
-        'fields' => [
-          'author',
-          'addl_author',
-          'artist',
-          'bib_created',
-          'callnum',
-          'callnums',
-          'lang',
-          'material',
-          'pub_year',
-          'pub_info',
-          'series',
-          'subjects',
-          'title',
-        ],
-        'foldables' => [
-          'title',
-          'author',
-          'artist'
-        ],
-        'stemmed' => [
-          'subjects'
-        ],
-        'term' => [
-          'series'
-        ]
-      ],
-      'community' => [
-        'fields' => [
-          'title',
-          'photographer',
-          'authored_by',
-        ],
-        'foldables' => []
-      ],
-      'website' => [
-        'fields' => [
-          'title',
-          'location_name'
-        ],
-        'foldables' => []
-      ]
-    ];
-    $queryables = [];
-
-    // match all : separated terms and iterate over the resulting key value pairs. 
-    // Concatenate a query_string for as many as are supplied, checking against folded fields. store potential remainder for later wildcard inlining within stringable queries
-    $remainder = str_replace('  ', ' ', $this->query);
-    preg_match_all('/([a-z]\S*):((["\'\da-zA-Z\*\s].+?|[\*])(?=(?:[a-z]\S*:|\s\s|$)))/', $remainder, $matches);
-    $keys = $matches[1];
-    $values = $matches[2];
-    foreach ($matches as $m) {
-      $remainder = str_replace($m, '', $remainder);
+    $parsed = $this->inlineParser->parse($this->query, $this->profile->getSearchableFields());
+    $text = $parsed->query;
+    $inlineClauses = $this->inlineClauseBuilder->build($parsed);
+    foreach ($inlineClauses['must'] as $clause) {
+      $this->doc->addMust($clause);
     }
-    preg_match('/(\sOR\s|\sAND\s)+$/', $remainder, $last);
-    if ($last === null) {
-      $remainder = $remainder .= ' AND ';
+    foreach ($inlineClauses['must_not'] as $clause) {
+      $this->doc->addMustNot($clause);
     }
-    // place terms into array to then iterate over again to check for operators within the specified field to support operators leading into another field.
-    foreach ($keys as $i => $k) {
-      if (in_array($k, $search_fields[$this->path_id]['fields'])) {
-        if (in_array($k, $search_fields[$this->path_id]['foldables'])) {
-          // Authors need broader handling for overdrive. Might be better addressed with an analyzer in the future.
-          if ($k === 'author') {
-            $this->query = str_replace('author:', '', $this->query);
-            $this->handleOverdrive($values[$i]);
-          } else {
-            $queryables[] = $k . '.folded:(' . trim($values[$i]) . ')';
-            // enforce exact matches in searchable fields when using quotations in value & not conflicting with overdrive
-            if (preg_match('/"(.*?)"/', $values[$i])) {
-              $this->enforceExactMatches($k, $values[$i]);
-            }
-          }
-        } else if (in_array($k, $search_fields[$this->path_id]['stemmed'])) {
-          $queryables[] = $k . '.stem:(' . trim($values[$i]) . ')';
-        } else {
-          if (in_array($k, $search_fields[$this->path_id]['term']) && preg_match('/^"(.*?)"/', $values[$i])) {
-
-            $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = [
-              'term' => [
-                $k . '.keyword' => [
-                  'value' => str_replace('"', '', $values[$i]),
-                  'case_insensitive' => true
-                ]
-              ]
-
-            ];
-          }
-          $queryables[] = $k . ':(' . trim($values[$i]) . ')';
-        }
-      }
+    if ($inlineClauses['inline']) {
+      return new QueryPlan($text, inline: true);
     }
 
-    foreach ($queryables as $i => $q) {
-      if (strpos($q, ' OR)')) {
-        $queryables[$i] = str_replace(' OR)', ')', $q) . ' OR ';
-      } elseif (strpos($q, ' AND)')) {
-        $queryables[$i] = str_replace(' AND)', ')', $q) . ' AND ';
-      }
-    }
     // if there are no set terms, check for quotation search and set query_string with string escapes
-    if (count($queryables) === 0 && preg_match('/^"(.*?)"/', $this->query)) {
-      if (!$this->overdrive) {
-        $search_escapes = [',', '-'];
-        $search_replace = ['', ' '];
-        $escaped = str_replace($search_escapes, $search_replace, $this->query);
-        $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
-          [
-            'query_string' =>
-            [
-              "query" => $escaped,
-              "default_operator" => "and",
-              "analyzer" => 'aadl_search_analyzer'
-            ]
-          ];
-      }
-    } else if (count($queryables) === 0 && $this->query === '*') {
-      $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
-        [
-          'query_string' => [
-            "query" => $this->query,
-            "default_operator" => "and",
-            "fuzzy_prefix_length" => 3,
-            "fuzziness" => 1
-          ]
+    if (preg_match('/^"(.*?)"/', $text)) {
+      if (!$parsed->hasStandalone) {
+        $quoted = [
+          "query" => (new AnalyzedQuery($text))->escaped,
+          "default_operator" => "and",
         ];
-    } else if (count($queryables) > 0) {
-      $this->inline = true;
-      // set query_string using the terms set above if there are any
-      $queryString = '';
-      foreach ($queryables as $q) {
-        $queryString .= $q;
+        $analyzer = $this->profile->getQuotedAnalyzer();
+        if ($analyzer !== null) {
+          $quoted['analyzer'] = $analyzer;
+        }
+        $this->doc->addMust(['query_string' => $quoted]);
       }
-      $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
-        [
-          'query_string' => [
-            "query" => $remainder != null ? '*:' . $remainder  . $queryString  : $queryString,
-            "default_operator" => "and",
-            "fuzzy_prefix_length" => 3,
-            "fuzziness" => 1
-          ]
-        ];
-    } else if ($this->path_id === 'catalog' && (strpos($this->query, ' AND ') || strpos($this->query, ' OR ') || strpos($this->query, '*'))) {
-      $this->es_query['body']['query']['function_score']['query']['bool']['must'][] =
-        [
-          'query_string' => [
-            "query" =>   $this->query,
-            "fields" => ['title.folded^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium'],
-          ]
-        ];
-    } else {
-      $search_escapes = [',', '-'];
-      $search_replace = ['', ' '];
-      $escaped = str_replace($search_escapes, $search_replace, $this->query);
-      $words = explode(' ', $escaped);
-      $critical = array_filter($words, function ($w) {
-        return strlen($w) >= 4;
-      });
-      /* 
-        stripping certain stop words in php instead of elastic so we can use it against a 
-        combined fields query without radically increasing mapping complexity. Combined
-        query returns better results than cross_fields with simpler score analysis in this 
-        setup.
-      */
-      $stop_words = ['a', 'an', 'the'];
-      $stop_query = $this->query;
-      foreach ($stop_words as $s) {
-        $stop_query = preg_replace('/(^|\s)\b(?i)' . $s . '\b(\s|$)/', ' ', $stop_query);
-      }
-      // if no terms or quotation wrapped searches, use a more inclusive search approach using nested should as an or
-      $formats = [
-        'catalog' => [
-          'bool' => [
-            'should' => [
-              [
-                'multi_match' => [
-                  "query" => strtolower($this->query),
-                  "fields" => ['title^20', 'author.folded^10', 'artist.folded^10', 'callnum', 'callnums', 'items.barcode', 'subjects.stem', 'stdnum', 'series', 'addl_author.folded', 'addl_title', 'pub_info', 'notes', 'title_medium'],
-                ],
-              ],
-              /* 
-                Helps relevancy of multi-faceted queries (e.g. {some title} {some author}). 
-                If there are only 2 words, it requires all to match somewhere in the set. 
-                if there are more, it maxes out at 4 requiring matches among the set. Having 
-                notes duplicated within an additional clause allows the removal of many 
-                instances of common words and phrases bloating results by requiring its 
-                occurrence in notes to be literal if a portion is hit by combined_fields
-              */
-              [
-                'bool' => [
-                  'should' => [
-                    [
-                      'combined_fields' => [
-                        "query" => $stop_query,
-                        "fields" => ['title', 'author', 'artist', 'callnum', 'callnums', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'notes'],
-                        "minimum_should_match" => "3<-10%"
-                      ],
-                    ],
-                    [
-                      'query_string' => [
-                        "query" => $this->query,
-                        "fields" => ['notes', 'pub_info', 'subjects.stem'],
-                        "analyzer" => "aadl_search_analyzer",
-                        "default_operator" => 'and'
-                      ],
-                    ],
-                  ],
-                ]
-              ],
-              /* 
-                This sifts out extraneous titles composed of very short words and also boosts close/exact 
-                matches of short words in sequence. Also helps support multi-faceted title/author queries made
-                without specified in-line fields, which could be missed by the top multi_match, but 
-                caught by the combined_fields.
-              */
-              [
-                'multi_match' => [
-                  "query" => $this->query,
-                  "type" => "phrase_prefix",
-                  "fields" => ["title.folded^20", "addl_title", 'items.barcode', "title_medium", "series", 'stdnum'],
-                ]
-              ],
-              // same as above but for authors
-              [
-                'multi_match' => [
-                  "query" => $this->query,
-                  "type" => 'phrase_prefix',
-                  "fields" => ["author.folded^3", 'addl_author.folded'],
-                ]
-              ],
-              /*
-                Use a dis_max to look for fuzzier results and use the highest score. Using a mix of tri-ngrams, 
-                fuzzy matches on author/title, and the same broad combined_fields query as above. Tri-gram matches 
-                should be used ahead of fuzzy matches. And combined field matches will be used above all. This
-                maintains the ability to do cross field searches without inline fields and still receive accurate
-                results. The lowest fuzzy bool group includes notes to ensure low ranking of incidental occurrences 
-              */
-              [
-                'dis_max' => [
-                  'queries' => [
-                    [
-                      'match' => [
-                        'title.trigram' => [
-                          "query" => $this->query,
-                          "minimum_should_match" => "4<-25%",
-                          "boost" => 0.3
-                        ]
-                      ]
-                    ],
-                    [
-                      'match' => [
-                        'author.trigram' => [
-                          "query" => $this->query,
-                          "minimum_should_match" => "4<-25%",
-                          "boost" => 0.3
-                        ]
-                      ],
-                    ]
-                  ]
-                ]
-              ]
-            ],
-            /* 
-              constrain what could be bloated results from the combined_fields
-              query by requiring at least two of these four clauses.
-            */
-            "minimum_should_match" => 2
-          ]
-        ],
-        'website' => [
-          "query_string" => [
-            "query" => $this->query,
-            "type" => 'cross_fields',
-            "fields" => [
-              "*",
-            ],
-            "default_operator" => "and",
-            "fuzzy_prefix_length" => 2,
-            "fuzziness" => "AUTO"
-          ]
-        ],
-        'community' => [
-          "query_string" => [
-            "query" => $this->query,
-            "type" => 'cross_fields',
-            "fields" => [
-              "*",
-            ],
-            "default_operator" => "and",
-            "fuzzy_prefix_length" => 2,
-            "fuzziness" => "AUTO"
-          ]
-        ]
-      ];
-      if (count($critical) > 0 && $this->path_id === 'catalog') {
-        $fQuery = implode('~1 ', $critical) . '~1';
-        $formats['catalog']['bool']['should'][4]['dis_max']['queries'][] =
-          [
-            'bool' => [
-              'should' => [
-                [
-                  'function_score' => [
-                    'query' => [
-                      'simple_query_string' => [
-                        "fields" => ['title.folded'],
-                        "query" =>  $fQuery,
-                        "minimum_should_match" => '2<80%'
-                      ]
-                    ],
-                    'min_score' => 25
-                  ]
-                ],
-                [
-                  'function_score' => [
-                    'query' => [
-                      'simple_query_string' => [
-                        "fields" => ['author.folded'],
-                        "query" =>  $fQuery,
-                        "boost" => .5,
-                      ]
-                    ],
-                    'min_score' => 10
-                  ],
-                ],
-                [
-                  'query_string' => [
-                    "query" => '"' . $this->query . '"',
-                    "fields" => ['notes', 'subjects.stem'],
-                    "analyzer" => "aadl_search_analyzer",
-                    "default_operator" => 'and'
-                  ],
-                ],
-                [
-                  'query_string' => [
-                    "query" => $this->query,
-                    "fields" => ['title', 'author', 'artist', 'subjects', 'series', 'addl_author', 'addl_title', 'title_medium', 'pub_info'],
-                    "analyzer" => "aadl_search_analyzer"
-                  ]
-                ],
-              ],
-              "minimum_should_match" => 2
-            ]
-          ];
-      }
-      $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = $formats[$this->path_id];
+      return new QueryPlan($text);
     }
+    if ($text === '*') {
+      $this->doc->addMust([
+        'query_string' => [
+          "query" => $text,
+          "default_operator" => "and",
+          "fuzzy_prefix_length" => 3,
+          "fuzziness" => 1,
+        ],
+      ]);
+      return new QueryPlan($text);
+    }
+    if ($operatorClause = $this->profile->getOperatorQuery($text)) {
+      $this->doc->addMust($operatorClause);
+      return new QueryPlan($text);
+    }
+    $this->doc->addMust($this->profile->getFallbackQuery($text));
+    return new QueryPlan($text);
   }
-  private function applyMatchTerms()
+
+  private function applyMatchTerms(): void
   {
+    $matchables = $this->profile->getMatchableFields();
     foreach ($this->args as $k => $v) {
-      if (!array_key_exists($k, $this->matchables)) {
+      if (!array_key_exists($k, $matchables)) {
         continue;
       }
-      $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = $this->scaffoldQuery($this->matchables[$k], $k, $v);
-    }
-  }
-  private function applyFilterTerms()
-  {
-    $defaults = [
-      'catalog' => [
-        'active' => [
-          'type' => 'match',
-          'value' => 1
-        ]
-      ],
-      'website' => [
-        'field_event_end' => [
-          'type' => 'nested',
-          'value' => [
-            'bool' => [
-              'must_not' => [
-                'range' => [
-                  'field_event_end' => [
-                    'lte' => 'now',
-                    'format' => 'date_hour_minute_second'
-                  ]
-                ]
-              ]
-            ]
-          ]
-        ],
-        'mat_code' => [
-          'type' => 'terms',
-          'value' => ['page', 'story', 'pub_event', 'media']
-        ]
-      ],
-      'community' => [
-        'mat_code' => [
-          'type' => 'terms',
-          'value' => ['photo', 'issue', 'doc', 'article', 'media', 'advertisements']
-        ]
-      ]
-    ];
-    foreach ($defaults[$this->path_id] as $k => $d) {
-      if (isset($_GET[$k])) {
-        continue;
-      } else {
-        $this->es_query['body']['query']['function_score']['query']['bool']['filter'][] = ($d['type'] === 'nested' ? $d['value'] : [
-          $d['type'] => [
-            $k => $d['value']
-          ]
-        ]);
+      $clause = $this->fieldClauseBuilder->build($matchables[$k], $k, $v);
+      if ($clause !== null) {
+        $this->doc->addMust($clause);
       }
     }
   }
-  private function applySortTerms()
+
+  private function applyFilterTerms(): void
   {
-    $defaults = [
-      'catalog' => [],
-      'website' => [
-        'pub_event' => [
-          'field_event_start' => [
-            'order' => 'asc'
-          ]
+    foreach ($this->profile->getDefaultFilters() as $k => $d) {
+      if (isset($this->args[$k])) {
+        continue;
+      }
+      $this->doc->addFilter($d['type'] === 'raw' ? $d['value'] : [
+        $d['type'] => [
+          $k => $d['value'],
         ],
-      ],
-      'community' => []
-    ];
-    $nonKeyword = [
-      'bib_created',
-      'field_event_end',
-      'field_event_start',
-      'oldnews_date',
-      'popular_week',
-      'popular_month',
-      'popular_year',
-      'popular_alltime',
-      '_score',
-    ];
+      ]);
+    }
+  }
+
+  private function applySortTerms(): void
+  {
+    $direct = array_merge(['_score'], $this->profile->getDirectSortFields());
     if (isset($this->args['sort'])) {
       $sort_parts = explode('~', $this->args['sort']);
       $sort_field = $sort_parts[0];
-      if (!in_array($sort_field, $nonKeyword)) {
-        $this->es_query['body']['sort'] = [
-          $sort_field . '.keyword' => [
-            'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc') // Default sort decending
-          ]
-        ];
-      } else {
-        $this->es_query['body']['sort'] = [
-          $sort_field => [
-            'order' => (isset($sort_parts[1]) ? $sort_parts[1] : 'desc')
-          ]
-        ];
+      $order = $sort_parts[1] ?? 'desc'; // Default sort decending
+      $field = in_array($sort_field, $direct) ? $sort_field : $sort_field . '.keyword';
+      $this->doc->setSort([$field => ['order' => $order]]);
+    } elseif (isset($this->args['mat_code'])) {
+      $default = $this->profile->getDefaultSorts()[$this->args['mat_code']] ?? null;
+      if ($default !== null) {
+        $this->doc->setSort($default);
       }
-    } elseif (isset($this->args['mat_code']) && isset($defaults[$this->path_id][$this->args['mat_code']])) {
-      $this->es_query['body']['sort'] =  $defaults[$this->path_id][$_GET['mat_code']];
     }
-    return $this->es_query;
   }
-  private function enforceExactMatches($key, $value)
+
+  // Helps boost closer exact matches over partial matches in broader queries
+  private function applyFlatBoosts(QueryPlan $plan): void
   {
-    $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = [
+    if (!$plan->allowsRelevanceBoosts()) {
+      return;
+    }
+    $exactPhrase = $this->profile->getExactPhraseBoost();
+    $this->doc->addShould($this->namer->named('exact_phrase', [
       'query_string' => [
-        'query' => $key . ':' . $value,
-      ]
-    ];
+        "query" => '"' . $plan->text . '"',
+        "fields" => $exactPhrase['fields'],
+        "boost" => $exactPhrase['boost'],
+      ],
+    ]));
   }
-  private function applyFlatBoosts()
-  {
-    // Helps boost closer exact matches over partial matches in broader queries, not included in wildcard queries
-    if (!str_contains($this->query, '*') && !$this->inline) {
-      $this->es_query['body']['query']['function_score']['query']['bool']['should'][] = [
-        'query_string' =>
-        [
-          "query" => '"' . $this->query . '"',
-          "fields" => ['title', 'title_medium', 'author', 'artist'],
-          "boost" => 500
-        ]
-      ];
-    }
-  }
-  private function handleOverdrive($value)
-  {
-    $overdriveString = preg_replace('/(?<=\w\.)(\s)(?=\w\.)/', '', $value);
-    $this->es_query['body']['query']['function_score']['query']['bool']['must'][] = [
-      'bool' => [
-        'should' => [
-          [
-            'match' => [
-              'author' => ["query" => $value, "operator" => "and", "analyzer" => "aadl_field_analyzer"]
-            ]
-          ],
-          [
-            'match' =>  [
-              'author.folded' => ["query" => $overdriveString, "operator" => "and", "analyzer" => "aadl_field_analyzer"]
-            ]
-          ]
-        ]
-      ]
-    ];
-    $this->overdrive = true;
-  }
-  private function scaffoldQuery($queryable, $key, $value)
-  {
-    if (isset($queryable['prepend'])) {
-      $key = $queryable['prepend'] . '.' . $key;
-    }
-    if (isset($queryable['append'])) {
-      $key = $key . '.' . $queryable['append'];
-    }
-    //mat_code bypasses .keyword, because the subfield is not configured on the website/local history index due to how elasticsearch_connector creates the index mapping.
-    switch ($queryable['type']) {
-      case 'date_range':
-        $dates = explode(',', $value);
-        return [
-          'range' => [
-            $key => [
-              'gte' => $dates[0],
-              'lte' => $dates[1]
-            ]
-          ]
-        ];
-        break;
-      case 'lexile_range':
-        $ceiling = 100 * ($value / 100 + 1) - 1;
 
-        return [
-          'range' => [
-            $key => [
-              'gte' => $value,
-              'lte' => $ceiling
-            ]
-          ]
-        ];
-        break;
-      case 'match':
-        return [
-          'match' => [
-            $key => $value
-          ]
-        ];
-        break;
-      case 'prefix':
-        return [
-          'prefix' => [
-            $key =>  [
-              'value' => $value
-            ]
-          ]
-        ];
-        break;
-      case 'simple':
-        return [
-          'simple_query_string' => [
-            'query' => $value,
-            'fields' => [$key]
-          ]
-        ];
-        break;
-      case 'match_phrase':
-        return [
-          'match_phrase' => [
-            $key => [
-              'query' => $value,
-            ]
-
-          ]
-        ];
-        break;
-      case 'term':
-        return [
-          'term' => [
-            $key  . (isset($queryable['keyword']) ? '' : '.keyword') => [
-              'value' => $value
-            ]
-          ]
-        ];
-        break;
-      case 'terms':
-        return [
-          'terms' => [
-            $key . (isset($queryable['keyword']) ?  '' : '.keyword')  => explode(',', $value)
-          ]
-        ];
-        break;
+  private function applyQueryBoosts(QueryPlan $plan): void
+  {
+    if (!$plan->allowsRelevanceBoosts()) {
+      return;
+    }
+    $boosts = $this->profile->getQueryBoosts();
+    if (count($boosts) === 0) {
+      return;
+    }
+    $analyzed = new AnalyzedQuery($plan->text);
+    foreach ($boosts as $boost) {
+      $function = $this->queryBoostBuilder->build($boost, $analyzed);
+      if ($function !== null) {
+        $this->doc->addFunction($function);
+      }
     }
   }
 }
